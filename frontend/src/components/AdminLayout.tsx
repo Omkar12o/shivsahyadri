@@ -88,9 +88,12 @@ function SidebarContent({
   const { success: toastSuccess } = useToast()
 
   const handleLogout = async () => {
-    await signOut()
-    toastSuccess('✓ Logged out successfully')
-    nav('/login', { replace: true })
+    try {
+      await signOut()
+    } finally {
+      toastSuccess('✓ Logged out successfully')
+      nav('/login', { replace: true })
+    }
   }
 
   return (
@@ -176,9 +179,12 @@ export default function AdminLayout() {
   const currentLabel = NAV_GROUPS.flatMap((g) => g.items).find((i) => i.match.includes(location.pathname))?.label ?? 'Admin'
 
   const handleLogout = async () => {
-    await signOut()
-    toastSuccess('✓ Logged out successfully')
-    nav('/login', { replace: true })
+    try {
+      await signOut()
+    } finally {
+      toastSuccess('✓ Logged out successfully')
+      nav('/login', { replace: true })
+    }
   }
 
   const closeAll = () => {

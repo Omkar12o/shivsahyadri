@@ -158,7 +158,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const signOut = useCallback(async () => {
-    await authService.signOut()
+    try {
+      await authService.signOut()
+    } catch {
+      /* Logout must always proceed locally even if the remote call fails. */
+    }
     setUser(null)
     setProfile(null)
     setSession(null)

@@ -119,7 +119,7 @@ export default function Home() {
     <div className="flex flex-col">
       {/* ============ HERO ============ */}
       <section className="relative overflow-hidden bg-gradient-to-br from-saffron via-primary-600 to-primary-800 text-white">
-        <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 20% 20%, white 1px, transparent 1px)', backgroundSize: '28px 28px' }} aria-hidden="true" />
+        <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 20% 20%, white 1px, transparent 1px)', backgroundSize: '28px 28px' }} aria-hidden="true" />
         <div className="container-main px-4 py-10 md:py-14">
           <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-center">
             <div className="text-center md:text-left animate-slide-up">
@@ -219,7 +219,11 @@ export default function Home() {
         ) : (
           <div className="grid md:grid-cols-2 gap-4">
             {upcomingPrograms.map(p => (
-              <div key={p.id} className="card p-5 flex gap-4">
+              <Link
+                key={p.id}
+                to="/programs"
+                className="card p-5 flex gap-4 hover:shadow-md transition-shadow"
+              >
                 {p.image_url ? (
                   <img src={p.image_url} alt={p.title} className="w-20 h-20 md:w-24 md:h-24 rounded-2xl object-cover shrink-0" loading="lazy" />
                 ) : (
@@ -233,7 +237,7 @@ export default function Home() {
                   {p.location && <p className="text-xs text-gray-400 flex gap-1"><MapPin className="w-3 h-3" aria-hidden="true" />{p.location}</p>}
                   {p.description && <p className="text-sm text-gray-600 mt-1 line-clamp-2">{p.description}</p>}
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         )}
@@ -286,9 +290,9 @@ export default function Home() {
           {aartis.length === 0 ? <p className="text-sm text-gray-500 mt-3">No Aarti published yet.</p> : (
             <ul className="mt-3 space-y-3">
               {aartis.map(a => (
-                <li key={a.id} className="flex justify-between items-center border rounded-xl px-4 py-3">
+                <li key={a.id} className="flex justify-between items-center border rounded-xl px-4 py-3 hover:bg-saffron/5 hover:border-saffron/30 transition-colors">
                   <div><p className="font-medium">{a.title}</p><p className="text-xs text-gray-500">{a.category} • {formatTime(a.time)}</p></div>
-                  <Link to={`/aarti/${a.id}`} className="btn-secondary text-xs px-3 py-1.5">View</Link>
+                  <Link to={`/aarti/${a.id}`} className="btn-secondary text-xs px-3 py-1.5 shrink-0">View</Link>
                 </li>
               ))}
             </ul>

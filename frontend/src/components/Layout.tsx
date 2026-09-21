@@ -91,11 +91,14 @@ export default function Layout() {
   ]
 
   const handleLogout = async () => {
-    await signOut()
-    setUserMenuOpen(false)
-    setMobileMenuOpen(false)
-    toastSuccess('✓ Logged out successfully')
-    nav('/')
+    try {
+      await signOut()
+    } finally {
+      setUserMenuOpen(false)
+      setMobileMenuOpen(false)
+      toastSuccess('✓ Logged out successfully')
+      nav('/')
+    }
   }
 
   return (
@@ -418,7 +421,7 @@ export default function Layout() {
 
         {/* Mobile Menu */}
         {mobileMenuOpen && (
-          <div className="lg:hidden bg-white border-t border-gray-100 animate-slide-down relative z-50">
+          <div className="lg:hidden bg-white border-t border-gray-100 animate-slide-down relative z-50 max-h-[calc(100dvh-env(safe-area-inset-top)-5rem)] overflow-y-auto overflow-x-hidden overscroll-contain">
             <div className="container-main px-4 py-4 space-y-2">
               {profile ? memberNavItems.map(item => {
                 const Icon = item.icon

@@ -1,0 +1,9 @@
+{
+  "name": "shivsaydri-mandal",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "npm --prefix frontend run dev -- --open",
+    "create-admin": "node scripts/create-admin.mjs"
+  }
+}

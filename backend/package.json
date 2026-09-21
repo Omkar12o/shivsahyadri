@@ -1,0 +1,25 @@
+{
+  "name": "shivsaydri-mandal-backend",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "node --watch index.js",
+    "start": "node index.js",
+    "build": "node --check index.js && node --check src/auth.js && node --check src/routes/push.js && node --check src/routes/cloudinary.js && node --check src/routes/birthday.js",
+    "deploy": "vercel --prod"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.116.0",
+    "cors": "^2.8.5",
+    "dotenv": "^18.0.1",
+    "express": "^4.21.2",
+    "web-push": "^3.6.7"
+  },
+  "devDependencies": {
+    "vercel": "^41.0.0"
+  }
+}

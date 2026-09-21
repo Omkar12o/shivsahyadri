@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+
+# Do not cache login/auth flows in search engines
+Disallow: /member/login
+Disallow: /member/register
+Disallow: /member/forgot-password
+Disallow: /member/reset-password
+Disallow: /admin/login
+Disallow: /admin/

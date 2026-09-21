@@ -90,7 +90,7 @@ values (
   null,
   current_date + 90,
   'श्री गणेशाय नमः',
-  'Shivsaydri Ganesh Mandal, Umarkhanchan',
+  'Shivsaydri Ganesh Mandal, Umarkhanchan',ad
   'Recent Announcements',
   'Upcoming Programs',
   'Moments of Ganeshotsav',

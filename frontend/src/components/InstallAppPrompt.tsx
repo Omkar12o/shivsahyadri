@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Smartphone, Bell, X, Download } from 'lucide-react'
 import InstallAppButton from './InstallAppButton'
 import { cn } from '@/utils'
+import { settingsService } from '@/services/settingsService'
 
 const STORAGE_KEY = 'shivsaydri_install_prompt_dismissed'
 
@@ -14,6 +15,11 @@ export default function InstallAppPrompt({ className }: { className?: string }) 
   const [canShow, setCanShow] = useState(false)
   const [showIosSteps, setShowIosSteps] = useState(false)
   const [installed, setInstalled] = useState(false)
+  const [logoUrl, setLogoUrl] = useState<string | null>('/logo.jpeg')
+
+  useEffect(() => {
+    settingsService.getSiteSettings().then(s => setLogoUrl(s?.logo_url ?? '/logo.jpeg')).catch(() => {})
+  }, [])
 
   useEffect(() => {
     try {
@@ -56,8 +62,12 @@ export default function InstallAppPrompt({ className }: { className?: string }) 
   return (
     <div className={cn('rounded-2xl border border-saffron/25 bg-gradient-to-br from-saffron/10 via-cream to-primary-100/40 p-5 shadow-sm', className)}>
       <div className="flex items-start gap-4">
-        <div className="hidden sm:flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-saffron text-white shadow-lg shadow-saffron/30">
-          <Smartphone className="w-6 h-6" aria-hidden="true" />
+        <div className="hidden sm:flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-saffron text-white shadow-lg shadow-saffron/30 overflow-hidden">
+          {logoUrl ? (
+            <img src={logoUrl} alt="Shivsaydri Ganesh Mandal logo" className="w-full h-full object-cover" />
+          ) : (
+            <Smartphone className="w-6 h-6" aria-hidden="true" />
+          )}
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-2">

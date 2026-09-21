@@ -101,7 +101,7 @@ export default function Layout() {
   return (
     <div className="min-h-screen flex flex-col bg-cream overflow-x-hidden">
       {/* Upper Scroller - Ganpati Mandir */}
-      <div className="fixed top-0 left-0 right-0 z-[60] bg-gradient-to-r from-saffron via-orange-600 to-red-600 text-white text-xs md:text-sm py-1.5 overflow-hidden">
+      <div className="fixed top-0 left-0 right-0 z-[60] bg-gradient-to-r from-saffron via-orange-600 to-red-600 text-white text-xs md:text-sm pt-[calc(env(safe-area-inset-top)+6px)] pb-1.5 overflow-hidden">
         <div className="whitespace-nowrap animate-marquee flex items-center gap-8">
           <span className="flex items-center gap-2">🛕 <span className="font-bold">Ganpati Mandir</span> — Shivsaydri Ganesh Mandal, Umarkhanchan</span>
           <span className="opacity-80">•</span>
@@ -121,7 +121,7 @@ export default function Layout() {
         </div>
       </div>
       <header className={cn(
-        'fixed top-7 left-0 right-0 z-50 transition-all duration-300 border-b border-orange-100',
+        'fixed top-[calc(env(safe-area-inset-top)+28px)] left-0 right-0 z-50 transition-all duration-300 border-b border-orange-100',
         scrolled ? 'bg-white shadow-md' : 'bg-white shadow-sm'
       )}>
         <nav className="container-main px-4" aria-label="Main navigation">
@@ -139,7 +139,7 @@ export default function Layout() {
                   <span className="text-white font-bold text-lg">श्री</span>
                 </div>
               )}
-              <span className="font-devanagari font-bold text-lg sm:text-xl text-gray-900 hidden sm:block whitespace-nowrap truncate max-w-[200px] md:max-w-[260px]">
+              <span className="font-devanagari font-bold text-base sm:text-lg md:text-xl text-gray-900 block sm:block whitespace-nowrap truncate max-w-[120px] xs:max-w-[160px] sm:max-w-[200px] md:max-w-[260px]">
                 {mandalName}
               </span>
             </Link>
@@ -418,7 +418,7 @@ export default function Layout() {
 
         {/* Mobile Menu */}
         {mobileMenuOpen && (
-          <div className="lg:hidden bg-white border-t border-gray-100 animate-slide-down">
+          <div className="lg:hidden bg-white border-t border-gray-100 animate-slide-down relative z-50">
             <div className="container-main px-4 py-4 space-y-2">
               {profile ? memberNavItems.map(item => {
                 const Icon = item.icon
@@ -516,7 +516,7 @@ export default function Layout() {
         )}
       </header>
 
-      <main className="flex-1 pt-24 md:pt-26 pb-24" id="main-content">
+      <main className="flex-1 pt-[calc(env(safe-area-inset-top)+6rem)] md:pt-[calc(env(safe-area-inset-top)+6.5rem)] pb-24" id="main-content">
         <Outlet />
       </main>
 

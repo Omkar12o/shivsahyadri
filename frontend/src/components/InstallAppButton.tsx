@@ -46,6 +46,9 @@ export default function InstallAppButton({
       setDeferredPrompt(null)
       setOpen(false)
     }
+    if (typeof window !== 'undefined' && window.matchMedia('(display-mode: standalone)').matches) {
+      setInstalled(true)
+    }
     window.addEventListener('beforeinstallprompt', onBeforeinstallprompt)
     window.addEventListener('appinstalled', onAppInstalled)
     return () => {

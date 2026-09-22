@@ -67,7 +67,7 @@ export const authService = {
         return { error: 'That username is already taken. Please choose another.', needsEmailConfirmation: false }
       }
       if (/password/i.test(message)) {
-        return { error: 'Password must be at least 8 characters with upper, lower and a number.', needsEmailConfirmation: false }
+        return { error: 'Password must be at least 8 characters.', needsEmailConfirmation: false }
       }
       if (/invalid email|not a valid email/i.test(message)) {
         return { error: 'Please enter a valid email address.', needsEmailConfirmation: false }

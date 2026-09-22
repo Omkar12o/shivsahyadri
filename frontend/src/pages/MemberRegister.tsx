@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { User, Mail, Lock, Calendar, ArrowRight, CheckCircle2, RefreshCw, LogIn } from 'lucide-react'
+import { User, Mail, Lock, Eye, EyeOff, Calendar, ArrowRight, CheckCircle2, RefreshCw, LogIn } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/components/ToastProvider'
@@ -20,6 +20,8 @@ export default function MemberRegister() {
   const [dateOfBirth, setDateOfBirth] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirm, setShowConfirm] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [resending, setResending] = useState(false)
@@ -248,20 +250,32 @@ export default function MemberRegister() {
                   <Lock className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" aria-hidden="true" />
                   <input
                     id="reg-password"
-                    type="password"
-                    className="input pl-9"
+                    type={showPassword ? 'text' : 'password'}
+                    className="input pl-9 pr-10"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
                     autoComplete="new-password"
                     placeholder="Create a password"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((s) => !s)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
                 </div>
-                <ul className="text-xs text-gray-400 mt-1 space-y-0.5">
-                  <li>• At least 8 characters</li>
-                  <li>• At least one uppercase and one lowercase letter</li>
-                  <li>• At least one number</li>
-                </ul>
+                <p className="text-xs text-gray-400 mt-1">
+                  {password.length > 0 && password.length < 8 ? (
+                    <span className="text-orange-600">Keep typing — {8 - password.length} more character{8 - password.length === 1 ? '' : 's'}.</span>
+                  ) : password.length >= 8 ? (
+                    <span className="text-green-600">✓ Looks good.</span>
+                  ) : (
+                    'Make it at least 8 characters — letters, numbers, anything you like.'
+                  )}
+                </p>
               </div>
 
               <div>
@@ -272,15 +286,26 @@ export default function MemberRegister() {
                   <Lock className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" aria-hidden="true" />
                   <input
                     id="reg-confirm"
-                    type="password"
-                    className="input pl-9"
+                    type={showConfirm ? 'text' : 'password'}
+                    className="input pl-9 pr-10"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
                     autoComplete="new-password"
                     placeholder="Type the password again"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirm((s) => !s)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    aria-label={showConfirm ? 'Hide password' : 'Show password'}
+                  >
+                    {showConfirm ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
                 </div>
+                {confirmPassword.length > 0 && confirmPassword !== password && (
+                  <p className="text-xs text-red-500 mt-1">Passwords do not match.</p>
+                )}
               </div>
             </section>
 

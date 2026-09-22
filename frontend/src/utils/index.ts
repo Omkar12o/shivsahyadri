@@ -253,6 +253,33 @@ export function isOnline(): boolean {
   return typeof navigator === 'undefined' ? true : navigator.onLine
 }
 
+const memoryCooldowns: Record<string, number> = {}
+
+/** Persist a cooldown (seconds) so email actions can't be spammed across reloads. */
+export function setCooldown(key: string, seconds: number): void {
+  const until = Date.now() + seconds * 1000
+  memoryCooldowns[key] = until
+  try {
+    localStorage.setItem(`mandal:cooldown:${key}`, String(until))
+  } catch {
+    /* memory-only fallback */
+  }
+}
+
+/** Seconds remaining for a cooldown key (0 = no cooldown active). */
+export function getCooldownRemaining(key: string): number {
+  let until = memoryCooldowns[key] ?? 0
+  try {
+    const stored = Number(localStorage.getItem(`mandal:cooldown:${key}`))
+    if (stored && stored > until) until = stored
+  } catch {
+    /* memory-only fallback */
+  }
+  if (!until) return 0
+  const remaining = Math.ceil((until - Date.now()) / 1000)
+  return remaining > 0 ? remaining : 0
+}
+
 export function sortByDateDesc<T extends Record<string, unknown>>(items: T[], key: keyof T): T[] {
   return [...items].sort((a, b) => {
     const aVal = new Date(String(a[key] ?? '')).getTime()

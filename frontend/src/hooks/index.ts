@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { getCooldownRemaining, setCooldown } from '@/utils'
 
 export function useDebouncedValue<T>(value: T, delay = 400): T {
   const [debounced, setDebounced] = useState(value)
@@ -9,6 +10,28 @@ export function useDebouncedValue<T>(value: T, delay = 400): T {
   }, [value, delay])
 
   return debounced
+}
+
+/**
+ * Countdown for email/rate-limit actions. Persists across reloads via
+ * localStorage so rapid retries against Supabase email endpoints are blocked.
+ */
+export function useCooldown(key: string) {
+  const [remaining, setRemaining] = useState(() => getCooldownRemaining(key))
+
+  useEffect(() => {
+    const update = () => setRemaining(getCooldownRemaining(key))
+    update()
+    const id = window.setInterval(update, 1000)
+    return () => window.clearInterval(id)
+  }, [key])
+
+  const start = (seconds: number) => {
+    setCooldown(key, seconds)
+    setRemaining(seconds)
+  }
+
+  return { remaining, start }
 }
 
 export function useCountdown(target?: string | null) {

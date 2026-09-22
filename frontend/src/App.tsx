@@ -21,6 +21,7 @@ import Contact from '@/pages/Contact'
 import Members from '@/pages/Members'
 import MemberChat from '@/pages/MemberChat'
 import CalendarPage from '@/pages/CalendarPage'
+import More from '@/pages/More'
 import Login from '@/pages/Login'
 import MemberRegister from '@/pages/MemberRegister'
 import MemberForgotPassword from '@/pages/MemberForgotPassword'
@@ -98,7 +99,7 @@ function AlreadyAuthRedirect({ children }: { children: React.ReactNode }) {
   if (loading) return <AuthLoadingScreen />
 
   if (profile) {
-    return <Navigate to={isAdminRole(profile.role) ? '/admin/dashboard' : '/member/dashboard'} replace />
+    return <Navigate to={isAdminRole(profile.role) ? '/admin/dashboard' : '/home'} replace />
   }
 
   return <>{children}</>
@@ -156,6 +157,8 @@ function App() {
         <Route path="contact" element={<Contact />} />
         <Route path="members" element={<Members />} />
         <Route path="calendar" element={<CalendarPage />} />
+
+        <Route path="more" element={<More />} />
 
         <Route path="member/dashboard" element={<Dashboard />} />
         <Route path="member/profile" element={<Profile />} />

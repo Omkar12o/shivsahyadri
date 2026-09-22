@@ -10,6 +10,7 @@ export interface SignInResult {
   error: string | null
   role: UserRole | null
   email?: string | null
+  code?: 'email_not_confirmed' | 'rate_limited' | 'network' | 'invalid' | null
 }
 
 interface AuthContextType {
@@ -17,7 +18,12 @@ interface AuthContextType {
   profile: Profile | null
   session: Session | null
   loading: boolean
-  signUp: (data: RegisterData) => Promise<{ error: string | null; needsEmailConfirmation: boolean }>
+  signUp: (data: RegisterData) => Promise<{
+    error: string | null
+    needsEmailConfirmation: boolean
+    code?: string | null
+    email?: string | null
+  }>
   signIn: (identifier: string, password: string) => Promise<SignInResult>
   signOut: () => Promise<void>
   updateProfile: (data: Partial<Profile>) => Promise<{ error: string | null }>
@@ -143,7 +149,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signIn = useCallback(async (identifier: string, password: string): Promise<SignInResult> => {
     const res = await authService.signIn(identifier, password)
-    if (res.error) return { error: res.error, role: null, email: res.email ?? null }
+    if (res.error) return { error: res.error, role: null, email: res.email ?? null, code: res.code ?? null }
 
     const { data: sessionData } = await supabase.auth.getSession()
     const authUserId = sessionData.session?.user.id

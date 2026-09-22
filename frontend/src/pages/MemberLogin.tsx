@@ -38,7 +38,7 @@ export default function MemberLogin() {
     }
 
     toastSuccess('✓ Login successful')
-    nav('/member/dashboard', { replace: true })
+    nav('/home', { replace: true })
   }
 
   return (

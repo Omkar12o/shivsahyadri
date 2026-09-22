@@ -21,7 +21,9 @@ export default function MemberForgotPassword() {
     const res = await authService.sendPasswordReset(email.trim())
     setBusy(false)
 
-    if (res.error && /\bnetwork\b|fetch|connect/i.test(res.error)) {
+    // sendPasswordReset only reports rate-limit or network failures, so showing
+    // the error never reveals whether an email belongs to an active account.
+    if (res.error) {
       setError(res.error)
       return
     }

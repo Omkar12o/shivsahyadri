@@ -41,7 +41,7 @@ export default function InstallGate() {
     const target = profile
       ? isAdminRole(profile.role)
         ? '/admin/dashboard'
-        : '/member/dashboard'
+        : '/home'
       : '/login'
     return <Navigate to={target} replace />
   }
@@ -52,7 +52,7 @@ export default function InstallGate() {
     const target = profile
       ? isAdminRole(profile.role)
         ? '/admin/dashboard'
-        : '/member/dashboard'
+        : '/home'
       : '/login'
     nav(target, { replace: true })
   }

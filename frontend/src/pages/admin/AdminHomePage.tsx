@@ -491,7 +491,7 @@ export default function AdminHomePage() {
           </p>
         </div>
         <a
-          href="/"
+          href="/home"
           target="_blank"
           rel="noopener noreferrer"
           className="btn-secondary text-sm shrink-0"

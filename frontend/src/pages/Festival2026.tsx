@@ -145,7 +145,7 @@ export default function Festival2026() {
 
       <div className="mt-10 p-6 bg-cream rounded-2xl text-center border">
         <p className="text-sm text-gray-600">This festival page is for <span className="font-bold">Ganpati 2026</span> only. Click any year to see its images & finance. Website built in 2026.</p>
-        <Link to="/" className="btn-primary mt-3 inline-flex">Back to Home</Link>
+        <Link to="/home" className="btn-primary mt-3 inline-flex">Back to Home</Link>
       </div>
     </div>
   )

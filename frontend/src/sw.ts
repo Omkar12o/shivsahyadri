@@ -1,7 +1,7 @@
 /// <reference lib="webworker" />
 import { precacheAndRoute, cleanupOutdatedCaches } from 'workbox-precaching'
 import { registerRoute } from 'workbox-routing'
-import { NetworkFirst, CacheFirst } from 'workbox-strategies'
+import { CacheFirst } from 'workbox-strategies'
 import { ExpirationPlugin } from 'workbox-expiration'
 
 declare let self: ServiceWorkerGlobalScope
@@ -12,15 +12,10 @@ const API_URL = 'supabase.co'
 precacheAndRoute(self.__WB_MANIFEST)
 cleanupOutdatedCaches()
 
-// API calls: network-first so fresh admin edits appear; cached as fallback offline.
-registerRoute(
-  ({ url }) => url.hostname.endsWith(API_URL) && !url.pathname.includes('/storage/v1/object/public'),
-  new NetworkFirst({
-    cacheName: 'supabase-api',
-    networkTimeoutSeconds: 10,
-    plugins: [new ExpirationPlugin({ maxEntries: 100, maxAgeSeconds: 60 * 60 * 24 })],
-  }),
-)
+// NOTE: Supabase REST API responses (private content, profiles, chat, etc.)
+// are intentionally NOT cached. Only static assets are precached and only
+// PUBLIC media (storage + cloudinary) is cached, so authenticated data never
+// leaks to the next person using the device after logout.
 
 // Public storage images: cache-first for fast, offline-friendly media.
 registerRoute(

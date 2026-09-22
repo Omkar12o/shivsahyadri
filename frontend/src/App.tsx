@@ -1,9 +1,12 @@
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { useEffect } from 'react'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
+import { useToast } from '@/components/ToastProvider'
 import { isAdminRole } from '@/types'
 import Layout from '@/components/Layout'
 import AdminLayout from '@/components/AdminLayout'
-import InstallAppPrompt from '@/components/InstallAppPrompt'
+import AuthLoadingScreen from '@/components/AuthLoadingScreen'
+import InstallGate from '@/pages/InstallGate'
 import Home from '@/pages/Home'
 import Aarti from '@/pages/Aarti'
 import AartiDetail from '@/pages/AartiDetail'
@@ -19,7 +22,6 @@ import Members from '@/pages/Members'
 import MemberChat from '@/pages/MemberChat'
 import CalendarPage from '@/pages/CalendarPage'
 import Login from '@/pages/Login'
-import MemberLogin from '@/pages/MemberLogin'
 import MemberRegister from '@/pages/MemberRegister'
 import MemberForgotPassword from '@/pages/MemberForgotPassword'
 import MemberResetPassword from '@/pages/MemberResetPassword'
@@ -46,14 +48,11 @@ import AdminMediaLibrary from '@/pages/admin/AdminMediaLibrary'
 import NotFound from '@/pages/NotFound'
 import Unauthorized from '@/pages/Unauthorized'
 
-function LoadingScreen() {
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-cream">
-      <div className="animate-spin rounded-full h-12 w-12 border-4 border-saffron border-t-transparent"></div>
-    </div>
-  )
-}
-
+/**
+ * Guards private routes. The website content is never rendered until the
+ * Supabase session/profile has been restored (loading gate first), so there is
+ * NO flash of public content before authentication.
+ */
 function ProtectedRoute({
   children,
   adminOnly = false,
@@ -66,19 +65,26 @@ function ProtectedRoute({
   redirectTo?: string
 }) {
   const { profile, loading } = useAuth()
+  const { error: toastError } = useToast()
 
-  if (loading) return <LoadingScreen />
+  const adminDenied = Boolean(profile && adminOnly && !isAdminRole(profile.role))
+
+  useEffect(() => {
+    if (adminDenied) toastError('✕ Access denied. Admin account required.')
+  }, [adminDenied, toastError])
+
+  if (loading) return <AuthLoadingScreen />
 
   if (!profile) {
     return <Navigate to={redirectTo ?? (adminOnly ? '/admin/login' : '/login')} replace />
   }
 
-  if (adminOnly && !isAdminRole(profile.role)) {
-    return <Navigate to="/unauthorized" replace />
+  if (adminDenied) {
+    // Member trying to reach /admin/* -> back to the member website with a toast.
+    return <Navigate to="/home" replace />
   }
 
   if (memberOnly && profile.role !== 'member') {
-    // Admins still have their own dashboard; only block non-members from member pages
     return <Navigate to={isAdminRole(profile.role) ? '/admin/dashboard' : '/login'} replace />
   }
 
@@ -89,7 +95,7 @@ function ProtectedRoute({
 function AlreadyAuthRedirect({ children }: { children: React.ReactNode }) {
   const { profile, loading } = useAuth()
 
-  if (loading) return <LoadingScreen />
+  if (loading) return <AuthLoadingScreen />
 
   if (profile) {
     return <Navigate to={isAdminRole(profile.role) ? '/admin/dashboard' : '/member/dashboard'} replace />
@@ -99,50 +105,20 @@ function AlreadyAuthRedirect({ children }: { children: React.ReactNode }) {
 }
 
 function App() {
-  const location = useLocation()
-  const showInstallPrompt = location.pathname === '/' || location.pathname === '/members'
-
   return (
-    <>
-      <Routes>
-      {/* ============ PUBLIC ROUTES ============ */}
-      <Route path="/" element={<Layout />}>
-        <Route index element={<Home />} />
-        <Route path="aarti" element={<Aarti />} />
-        <Route path="aarti/book" element={<AartiBook />} />
-        <Route path="aarti/:id" element={<AartiDetail />} />
-        <Route path="programs" element={<Programs />} />
-        <Route path="gallery" element={<Gallery />} />
-        <Route path="videos" element={<Videos />} />
-        <Route path="meetings" element={<Meetings />} />
-        <Route path="festival/2026" element={<Festival2026 />} />
-        <Route path="donation" element={<Donation />} />
-        <Route path="contact" element={<Contact />} />
-        <Route path="members" element={<Members />} />
-        <Route path="calendar" element={<CalendarPage />} />
-        <Route
-          path="login"
-          element={
-            <AlreadyAuthRedirect>
-              <Login />
-            </AlreadyAuthRedirect>
-          }
-        />
-      </Route>
-
-      {/* Legacy register/login redirects to the new member URLs */}
-      <Route path="/register" element={<Navigate to="/member/register" replace />} />
-      <Route path="/reset-password" element={<Navigate to="/member/reset-password" replace />} />
-
-      {/* ============ AUTH (standalone, mobile-friendly) ============ */}
+    <Routes>
+      {/* ============ PUBLIC INSTALL / AUTH (never show website content) ============ */}
+      <Route path="/" element={<InstallGate />} />
+      <Route path="/install" element={<InstallGate />} />
       <Route
-        path="/member/login"
+        path="/login"
         element={
           <AlreadyAuthRedirect>
-            <MemberLogin />
+            <Login />
           </AlreadyAuthRedirect>
         }
       />
+      <Route path="/member/login" element={<Navigate to="/login" replace />} />
       <Route
         path="/member/register"
         element={
@@ -155,14 +131,32 @@ function App() {
       <Route path="/member/reset-password" element={<MemberResetPassword />} />
       <Route path="/admin/login" element={<AdminLogin />} />
 
-      {/* ============ MEMBER PROTECTED ROUTES ============ */}
+      {/* Legacy register/login redirects */}
+      <Route path="/register" element={<Navigate to="/member/register" replace />} />
+      <Route path="/reset-password" element={<Navigate to="/member/reset-password" replace />} />
+
+      {/* ============ MEMBER WEBSITE (requires authentication) ============ */}
       <Route
         element={
-          <ProtectedRoute redirectTo="/member/login">
+          <ProtectedRoute>
             <Layout />
           </ProtectedRoute>
         }
       >
+        <Route path="home" element={<Home />} />
+        <Route path="aarti" element={<Aarti />} />
+        <Route path="aarti/book" element={<AartiBook />} />
+        <Route path="aarti/:id" element={<AartiDetail />} />
+        <Route path="programs" element={<Programs />} />
+        <Route path="gallery" element={<Gallery />} />
+        <Route path="videos" element={<Videos />} />
+        <Route path="meetings" element={<Meetings />} />
+        <Route path="festival/2026" element={<Festival2026 />} />
+        <Route path="donation" element={<Donation />} />
+        <Route path="contact" element={<Contact />} />
+        <Route path="members" element={<Members />} />
+        <Route path="calendar" element={<CalendarPage />} />
+
         <Route path="member/dashboard" element={<Dashboard />} />
         <Route path="member/profile" element={<Profile />} />
         <Route path="member/notifications" element={<Notifications />} />
@@ -174,7 +168,7 @@ function App() {
       <Route path="/profile" element={<Navigate to="/member/profile" replace />} />
       <Route path="/notifications" element={<Navigate to="/member/notifications" replace />} />
 
-      {/* ============ ADMIN ROUTES ============ */}
+      {/* ============ ADMIN ROUTES (admin/super_admin only) ============ */}
       <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
       <Route
         element={
@@ -206,14 +200,7 @@ function App() {
       {/* ============ ERROR PAGES ============ */}
       <Route path="/unauthorized" element={<Unauthorized />} />
       <Route path="*" element={<NotFound />} />
-      </Routes>
-
-      {showInstallPrompt && (
-        <div className="fixed bottom-4 left-4 right-4 z-[90] max-w-md sm:left-auto sm:right-6">
-          <InstallAppPrompt className="bg-white/95 backdrop-blur border shadow-xl" />
-        </div>
-      )}
-    </>
+    </Routes>
   )
 }
 

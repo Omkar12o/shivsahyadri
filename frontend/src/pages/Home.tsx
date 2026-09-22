@@ -316,7 +316,7 @@ export default function Home() {
 
       {/* ============ ANNOUNCEMENTS ============ */}
       {announcements.length > 0 && (
-        <section className="container-main px-4 pb-8">
+        <section id="announcements" className="container-main px-4 pb-8">
           <h3 className="font-bold mb-4 flex items-center gap-2"><Megaphone className="w-5 h-5 text-saffron" aria-hidden="true" />{site?.announcements_title ?? 'Recent Announcements'}</h3>
           <div className="grid md:grid-cols-3 gap-4">
             {announcements.map(a => (

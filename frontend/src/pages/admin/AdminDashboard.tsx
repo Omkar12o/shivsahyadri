@@ -130,7 +130,7 @@ export default function AdminDashboard() {
           <p className="text-sm text-gray-500 mt-1">{todayLabel}</p>
         </div>
         <Link
-          to="/"
+          to="/home"
           target="_blank"
           rel="noopener noreferrer"
           className="btn-secondary text-sm"

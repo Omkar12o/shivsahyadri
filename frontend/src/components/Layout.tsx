@@ -64,7 +64,7 @@ export default function Layout() {
   }
 
   const navItems = [
-    { path: '/', label: t('nav.home'), icon: Home },
+    { path: '/home', label: t('nav.home'), icon: Home },
     { path: '/members', label: t('nav.members'), icon: Users },
     { path: '/calendar', label: 'Calendar', icon: Calendar },
     { path: '/aarti', label: t('nav.aarti'), icon: Music },
@@ -97,7 +97,7 @@ export default function Layout() {
       setUserMenuOpen(false)
       setMobileMenuOpen(false)
       toastSuccess('✓ Logged out successfully')
-      nav('/')
+      nav('/login', { replace: true })
     }
   }
 
@@ -129,7 +129,7 @@ export default function Layout() {
       )}>
         <nav className="container-main px-4" aria-label="Main navigation">
           <div className="flex items-center justify-between h-16 md:h-18">
-            <Link to="/" className="flex items-center gap-2" aria-label="Shivsaydri Ganesh Mandal Home">
+            <Link to="/home" className="flex items-center gap-2" aria-label="Shivsaydri Ganesh Mandal Home">
               {logoUrl ? (
                 <img
                   src={logoUrl}
@@ -151,7 +151,7 @@ export default function Layout() {
             <div className="hidden lg:flex items-center gap-0.5 overflow-x-auto scrollbar-hide">
               {profile ? memberNavItems.map(item => {
                 const Icon = item.icon
-                const isActive = location.pathname === item.path || (item.path !== '/' && location.pathname.startsWith(item.path))
+                const isActive = location.pathname === item.path || (item.path !== '/home' && location.pathname.startsWith(item.path))
                 return (
                   <Link
                     key={item.path}
@@ -174,7 +174,7 @@ export default function Layout() {
                 )
               }) : navItems.map(item => {
                 const Icon = item.icon
-                const isActive = location.pathname === item.path || (item.path !== '/' && location.pathname.startsWith(item.path))
+                const isActive = location.pathname === item.path || (item.path !== '/home' && location.pathname.startsWith(item.path))
                 return (
                   <Link
                     key={item.path}
@@ -425,7 +425,7 @@ export default function Layout() {
             <div className="container-main px-4 py-4 space-y-2">
               {profile ? memberNavItems.map(item => {
                 const Icon = item.icon
-                const isActive = location.pathname === item.path || (item.path !== '/' && location.pathname.startsWith(item.path))
+                const isActive = location.pathname === item.path || (item.path !== '/home' && location.pathname.startsWith(item.path))
                 return (
                   <Link
                     key={item.path}
@@ -449,7 +449,7 @@ export default function Layout() {
                 )
               }) : navItems.map(item => {
                 const Icon = item.icon
-                const isActive = location.pathname === item.path || (item.path !== '/' && location.pathname.startsWith(item.path))
+                const isActive = location.pathname === item.path || (item.path !== '/home' && location.pathname.startsWith(item.path))
                 return (
                   <Link
                     key={item.path}

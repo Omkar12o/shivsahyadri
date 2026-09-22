@@ -3,13 +3,14 @@ import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import { useNotifications } from '@/contexts/NotificationContext'
 import { Link } from 'react-router-dom'
-import { User, Calendar, Music, Bell, Heart, Images, MessageSquare, ChevronRight, Clock, Download } from 'lucide-react'
+import { User, Calendar, Music, Bell, Heart, Images, MessageSquare, ChevronRight, Clock, Download, Users, Video, Megaphone, MapPin, Home } from 'lucide-react'
 import InstallAppButton from '@/components/InstallAppButton'
 import PushNotificationPanel from '@/components/PushNotificationPanel'
 import { calendarEventService, type CalendarItem } from '@/services/calendarEventService'
 import { galleryService } from '@/services/galleryService'
 import { formatKolkataDate, formatKolkataTime } from '@/utils/calendar'
 import type { GalleryImage } from '@/types'
+import heroImage from '@/assets/hero.png'
 
 export default function Dashboard() {
   const { profile, refreshProfile } = useAuth()
@@ -44,9 +45,29 @@ export default function Dashboard() {
 
   return (
     <div className="container-main px-4 py-10">
-      <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-2">
+      {/* Greeting hero with Mandal logo + Ganpati image */}
+      <div className="card overflow-hidden">
+        <div className="relative">
+          <img src={heroImage} alt="Ganpati Bappa" className="w-full h-36 md:h-44 object-cover" loading="eager" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-transparent" />
+          <div className="absolute bottom-4 left-0 right-0 px-5 flex items-center gap-3">
+            <img
+              src="/logo.jpeg"
+              alt="Mandal Logo"
+              className="w-12 h-12 rounded-2xl bg-white object-contain p-1 border border-white/40 shadow-lg"
+              loading="eager"
+            />
+            <div className="min-w-0 text-white">
+              <p className="font-devanagari font-bold text-lg md:text-xl truncate">Shivsaydri Ganesh Mandal</p>
+              <p className="text-xs text-white/80 truncate">Umarkhanchan • गणपती बाप्पा मोरया 🙏</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-2 mt-4">
         <div>
-          <h1 className="page-title">👋 Welcome, {profile?.full_name}</h1>
+          <h1 className="page-title">🙏 Welcome, {profile?.full_name}</h1>
           <p className="page-subtitle">@{profile?.user_id} • {profile?.village ?? 'Umarkhanchan'} • {profile?.role}</p>
         </div>
         <div className="flex items-center gap-2">
@@ -115,14 +136,18 @@ export default function Dashboard() {
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
-        <Link to="/member/profile" className="card p-6 hover:shadow-lg flex flex-col items-center gap-2 text-center"><User className="w-8 h-8 text-saffron" />My Profile</Link>
+        <Link to="/home" className="card p-6 hover:shadow-lg flex flex-col items-center gap-2 text-center"><Home className="w-8 h-8 text-saffron" />Home</Link>
         <Link to="/aarti" className="card p-6 hover:shadow-lg flex flex-col items-center gap-2 text-center"><Music className="w-8 h-8 text-saffron" />Aarti</Link>
         <Link to="/programs" className="card p-6 hover:shadow-lg flex flex-col items-center gap-2 text-center"><Calendar className="w-8 h-8 text-saffron" />Programs</Link>
+        <Link to="/gallery" className="card p-6 hover:shadow-lg flex flex-col items-center gap-2 text-center"><Images className="w-8 h-8 text-saffron" />Gallery</Link>
+        <Link to="/members" className="card p-6 hover:shadow-lg flex flex-col items-center gap-2 text-center"><Users className="w-8 h-8 text-saffron" />Members</Link>
+        <Link to="/videos" className="card p-6 hover:shadow-lg flex flex-col items-center gap-2 text-center"><Video className="w-8 h-8 text-saffron" />Videos</Link>
+        <Link to="/home#announcements" className="card p-6 hover:shadow-lg flex flex-col items-center gap-2 text-center"><Megaphone className="w-8 h-8 text-saffron" />Announcements</Link>
+        <Link to="/donation" className="card p-6 hover:shadow-lg flex flex-col items-center gap-2 text-center"><Heart className="w-8 h-8 text-saffron" />Donation</Link>
+        <Link to="/contact" className="card p-6 hover:shadow-lg flex flex-col items-center gap-2 text-center"><MapPin className="w-8 h-8 text-saffron" />Contact</Link>
         <Link to="/member/chat" className="card p-6 hover:shadow-lg flex flex-col items-center gap-2 text-center"><MessageSquare className="w-8 h-8 text-saffron" />Community Chat</Link>
         <Link to="/member/notifications" className="card p-6 hover:shadow-lg flex flex-col items-center gap-2 text-center"><Bell className="w-8 h-8 text-saffron" />Notifications ({unreadCount})</Link>
-        <Link to="/donation" className="card p-6 hover:shadow-lg flex flex-col items-center gap-2 text-center"><Heart className="w-8 h-8 text-saffron" />Donation</Link>
-        <Link to="/gallery" className="card p-6 hover:shadow-lg flex flex-col items-center gap-2 text-center"><Images className="w-8 h-8 text-saffron" />Gallery</Link>
-        <Link to="/calendar" className="card p-6 hover:shadow-lg flex flex-col items-center gap-2 text-center"><Calendar className="w-8 h-8 text-saffron" />Calendar</Link>
+        <Link to="/member/profile" className="card p-6 hover:shadow-lg flex flex-col items-center gap-2 text-center"><User className="w-8 h-8 text-saffron" />My Profile</Link>
       </div>
 
       {/* Gallery section — recent published photos */}

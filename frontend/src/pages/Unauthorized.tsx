@@ -24,7 +24,7 @@ export default function Unauthorized() {
           <button onClick={() => nav(-1)} className="btn-outline">
             Go Back
           </button>
-          <Link to="/" className="btn-primary">
+          <Link to="/home" className="btn-primary">
             Go Home
           </Link>
         </div>

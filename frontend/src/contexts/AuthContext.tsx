@@ -166,6 +166,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null)
     setProfile(null)
     setSession(null)
+    // Never leave user-specific data in the service worker caches for the next
+    // person using the device.
+    try {
+      if (typeof caches !== 'undefined') {
+        await Promise.allSettled([caches.delete('supabase-api'), caches.delete('app-shell')])
+      }
+    } catch {
+      /* cache cleanup is best-effort */
+    }
   }, [])
 
   const updateProfile = useCallback(

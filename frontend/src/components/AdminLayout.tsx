@@ -297,7 +297,7 @@ export default function AdminLayout() {
                       </div>
                       <div className="py-1">
                         <Link
-                          to="/"
+                          to="/home"
                           target="_blank"
                           rel="noopener noreferrer"
                           onClick={closeAll}

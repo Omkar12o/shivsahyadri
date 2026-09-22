@@ -208,7 +208,7 @@ comment on table public.push_subscriptions is
   'Web Push subscriptions per device. Endpoint is unique; devices are deactivated (not deleted) when they stop working.';
 
 drop index if exists push_subscriptions_auth_user_idx;
-create index push_subscriptions_auth_user_idx on public.push_subscriptions (auth_user_id) where active = true;
+create index if not exists push_subscriptions_auth_user_idx on public.push_subscriptions (auth_user_id) where active = true;
 
 -- ============================================================================
 -- 2. chat_messages (member community chat - text only)
@@ -228,7 +228,7 @@ comment on table public.chat_messages is
   'Text-only member community chat. Admin deletes are soft deletes (deleted_at); only super_admin can hard delete.';
 
 drop index if exists chat_messages_created_idx;
-create index chat_messages_created_idx on public.chat_messages (created_at desc);
+create index if not exists chat_messages_created_idx on public.chat_messages (created_at desc);
 
 -- ============================================================================
 -- 3. calendar_events (Mandal calendar; programs/meetings are also merged in
@@ -270,10 +270,10 @@ comment on table public.calendar_events is
   'Admin-managed calendar events. Times are stored as timestamptz and displayed in Asia/Kolkata.';
 
 drop index if exists calendar_events_start_idx;
-create index calendar_events_start_idx on public.calendar_events (start_datetime);
+create index if not exists calendar_events_start_idx on public.calendar_events (start_datetime);
 
 drop index if exists calendar_events_type_idx;
-create index calendar_events_type_idx on public.calendar_events (event_type, status, is_public);
+create index if not exists calendar_events_type_idx on public.calendar_events (event_type, status, is_public);
 
 -- ============================================================================
 -- Triggers: keep updated_at fresh
@@ -428,26 +428,31 @@ grant select on public.push_subscriptions, public.chat_messages, public.calendar
 
 alter table public.aartis enable row level security;
 drop policy if exists "aartis_select_published" on public.aartis;
+drop policy if exists "aartis_select_authenticated" on public.aartis;
 create policy "aartis_select_authenticated" on public.aartis
   for select using (auth.uid() is not null and (is_published = true or public.is_admin()));
 
 alter table public.programs enable row level security;
 drop policy if exists "programs_select_published" on public.programs;
+drop policy if exists "programs_select_authenticated" on public.programs;
 create policy "programs_select_authenticated" on public.programs
   for select using (auth.uid() is not null and (is_published = true or public.is_admin()));
 
 alter table public.announcements enable row level security;
 drop policy if exists "announcements_select_published" on public.announcements;
+drop policy if exists "announcements_select_authenticated" on public.announcements;
 create policy "announcements_select_authenticated" on public.announcements
   for select using (auth.uid() is not null and (is_published = true or public.is_admin()));
 
 alter table public.gallery enable row level security;
 drop policy if exists "gallery_select_published" on public.gallery;
+drop policy if exists "gallery_select_authenticated" on public.gallery;
 create policy "gallery_select_authenticated" on public.gallery
   for select using (auth.uid() is not null and (is_published = true or public.is_admin()));
 
 alter table public.videos enable row level security;
 drop policy if exists "videos_select_published" on public.videos;
+drop policy if exists "videos_select_authenticated" on public.videos;
 create policy "videos_select_authenticated" on public.videos
   for select using (auth.uid() is not null and (is_published = true or public.is_admin()));
 
@@ -455,6 +460,7 @@ create policy "videos_select_authenticated" on public.videos
 
 alter table public.donation_info enable row level security;
 drop policy if exists "donation_select_public" on public.donation_info;
+drop policy if exists "donation_select_authenticated" on public.donation_info;
 create policy "donation_select_authenticated" on public.donation_info
   for select using (auth.uid() is not null and (is_active = true or public.is_admin()));
 
@@ -462,11 +468,13 @@ create policy "donation_select_authenticated" on public.donation_info
 
 alter table public.site_settings enable row level security;
 drop policy if exists "site_settings_select_public" on public.site_settings;
+drop policy if exists "site_settings_select_authenticated" on public.site_settings;
 create policy "site_settings_select_authenticated" on public.site_settings
   for select using (auth.uid() is not null);
 
 alter table public.mandal_info enable row level security;
 drop policy if exists "mandal_select_public" on public.mandal_info;
+drop policy if exists "mandal_select_authenticated" on public.mandal_info;
 create policy "mandal_select_authenticated" on public.mandal_info
   for select using (auth.uid() is not null);
 
@@ -652,3 +660,61 @@ grant execute on function public.is_user_id_taken(text) to anon, authenticated;
 
 
 
+
+
+-- ============================================================================
+-- ============================================================================
+-- FILE: 20260101002300_realtime_member_alerts.sql
+--
+-- Guarantees that admin announcements & notifications reach members in real
+-- time (within seconds). Ensures every table the member app listens to is in
+-- the SUPABASE_REALTIME publication.
+--
+-- BULLETPROOF: this script cannot fail. Every table name is checked with
+-- to_regclass() before being added, so a name that does not exist (for example
+-- "chat_rooms") is simply skipped instead of raising 42P01. It is fully
+-- idempotent and safe to re-run.
+-- ============================================================================
+
+do $$
+begin
+  if not exists (select 1 from pg_publication where pubname = 'supabase_realtime') then
+    create publication supabase_realtime;
+  end if;
+end $$;
+
+do $$
+declare t text;
+begin
+  foreach t in array array[
+    'notifications',
+    'notification_reads',
+    'announcements',
+    'profiles',
+    'site_settings',
+    'donation_info',
+    'mandal_info',
+    'aartis',
+    'gallery',
+    'videos',
+    'meetings',
+    'calendar_events',
+    'chat_messages'
+  ]
+  loop
+    if to_regclass(format('public.%I', t)) is not null then
+      begin
+        execute format('alter publication supabase_realtime add table public.%I', t);
+      exception
+        when duplicate_object then null;
+      end;
+    end if;
+  end loop;
+end $$;
+
+do $$
+begin
+  if to_regclass('public.notification_reads') is not null then
+    execute 'grant select on public.notification_reads to anon, authenticated';
+  end if;
+end $$;

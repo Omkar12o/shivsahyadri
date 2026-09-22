@@ -12,6 +12,12 @@ import {
   Download,
   Languages,
   User as UserIcon,
+  Calendar,
+  BookOpen,
+  MessageCircle,
+  Star,
+  Handshake,
+  Sparkles,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useNotifications } from '@/contexts/NotificationContext'
@@ -80,7 +86,10 @@ export default function More() {
 
   const mandalRows: Row[] = [
     { label: t('nav.members'), to: '/members', icon: <Users className="w-5 h-5" aria-hidden="true" /> },
+    { label: t('nav.meetings'), to: '/meetings', icon: <Handshake className="w-5 h-5" aria-hidden="true" /> },
     { label: t('nav.videos'), to: '/videos', icon: <Video className="w-5 h-5" aria-hidden="true" /> },
+    { label: 'Aarti Book', to: '/aarti/book', icon: <BookOpen className="w-5 h-5" aria-hidden="true" /> },
+    { label: t('nav.festival2026'), to: '/festival/2026', icon: <Star className="w-5 h-5" aria-hidden="true" /> },
     { label: 'Announcements', to: '/member/notifications', icon: <Megaphone className="w-5 h-5" aria-hidden="true" />, badge: unreadCount },
   ]
   if (donation) {
@@ -88,12 +97,18 @@ export default function More() {
   }
 
   const infoRows: Row[] = [
+    { label: 'Calendar', to: '/calendar', icon: <Calendar className="w-5 h-5" aria-hidden="true" /> },
     {
       label: 'About Mandal',
       icon: <Info className="w-5 h-5" aria-hidden="true" />,
       onClick: () => document.getElementById('abo-mandal')?.scrollIntoView({ behavior: 'smooth' }),
     },
     { label: t('nav.contact'), to: '/contact', icon: <MapPin className="w-5 h-5" aria-hidden="true" /> },
+  ]
+
+  const communityRows: Row[] = [
+    { label: 'Community Chat', to: '/member/chat', icon: <MessageCircle className="w-5 h-5" aria-hidden="true" /> },
+    { label: 'Dashboard', to: '/member/dashboard', icon: <Sparkles className="w-5 h-5" aria-hidden="true" /> },
   ]
 
   const accountRows: Row[] = [
@@ -159,6 +174,11 @@ export default function More() {
           <div className="card divide-y divide-gray-100 overflow-hidden">
             <div className="px-4 pt-3 pb-2 text-[11px] font-bold uppercase tracking-wider text-gray-400">Information</div>
             {infoRows.map((row) => <RowItem key={row.label} row={row} />)}
+          </div>
+
+          <div className="card divide-y divide-gray-100 overflow-hidden">
+            <div className="px-4 pt-3 pb-2 text-[11px] font-bold uppercase tracking-wider text-gray-400">Community</div>
+            {communityRows.map((row) => <RowItem key={row.label} row={row} />)}
           </div>
 
           <div className="card divide-y divide-gray-100 overflow-hidden">

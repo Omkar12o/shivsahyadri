@@ -1,38 +1,37 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
-  Calendar,
   Music,
   Megaphone,
   Images,
   Clock,
-  MapPin,
   Heart,
   Play,
   ChevronRight,
   Sparkles,
   Handshake,
   Rocket,
+  Users,
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import { aartiService } from '@/services/aartiService'
-import { programService } from '@/services/programService'
 import { announcementService } from '@/services/announcementService'
 import { galleryService } from '@/services/galleryService'
 import { settingsService } from '@/services/settingsService'
+import { profileService } from '@/services/profileService'
 import { QuickActionIcon } from '@/components/ui/display'
-import { formatDate, formatTime } from '@/utils'
+import { formatTime, getAvatarColor, getInitials } from '@/utils'
 import { useLanguage } from '@/contexts/LanguageContext'
 import type {
   Aarti,
-  Program,
   Announcement,
   GalleryImage,
   SiteSettings,
   DonationInfo,
   MandalInfo,
   QuickAction,
+  MemberDirectoryEntry,
 } from '@/types'
 
 const DEFAULT_QUICK_ACTIONS: { destination: string; label: string; icon: string }[] = [
@@ -46,10 +45,9 @@ export default function Home() {
   const { profile } = useAuth()
   const { t } = useLanguage()
   const [aartis, setAartis] = useState<Aarti[]>([])
-  const [programs, setPrograms] = useState<Program[]>([])
-  const [upcomingFallback, setUpcomingFallback] = useState<Program[]>([])
   const [announcements, setAnnouncements] = useState<Announcement[]>([])
   const [gallery, setGallery] = useState<GalleryImage[]>([])
+  const [members, setMembers] = useState<MemberDirectoryEntry[]>([])
   const [site, setSite] = useState<SiteSettings | null>(null)
   const [donation, setDonation] = useState<DonationInfo | null>(null)
   const [mandal, setMandal] = useState<MandalInfo | null>(null)
@@ -61,30 +59,20 @@ export default function Home() {
   const load = useCallback(async () => {
     try {
       setLoadError(false)
-      const [a, p, an, g, s, d, m] = await Promise.all([
+      const [a, an, g, mList, s, d, m] = await Promise.all([
         aartiService.listToday().catch(() => []),
-        programService.listToday().catch(() => []),
         announcementService.list({ limit: 3 }).catch(() => []),
         galleryService.list({ limit: 8 }).catch(() => []),
+        profileService.getMemberDirectory().catch(() => []),
         settingsService.getSiteSettings().catch(() => null),
         settingsService.getDonationInfo().catch(() => null),
         settingsService.getMandalInfo().catch(() => null),
       ])
       if (!aliveRef.current) return
       setAartis(a)
-      setPrograms(p)
-      if (p.length === 0) {
-        const todayKey = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' })
-        const upcoming = await programService
-          .list()
-          .then(list => list.filter(x => x.event_date >= todayKey).slice(0, 3))
-          .catch(() => [])
-        if (aliveRef.current) setUpcomingFallback(upcoming)
-      } else {
-        setUpcomingFallback([])
-      }
       setAnnouncements(an)
       setGallery(g)
+      setMembers(mList)
       setSite(s)
       setDonation(d)
       setMandal(m)
@@ -100,8 +88,8 @@ export default function Home() {
     load()
     const ch = supabase.channel('home-live')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'aartis' }, load)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'programs' }, load)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'announcements' }, load)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, load)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'site_settings' }, load)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'donation_info' }, load)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'mandal_info' }, load)
@@ -109,10 +97,9 @@ export default function Home() {
     return () => { aliveRef.current = false; supabase.removeChannel(ch) }
   }, [load])
 
-  if (loading) return <HomeSkeleton />
+  const membersPreviewCount = Math.min(Math.max(site?.members_preview_count ?? 6, 0), 12)
 
-  const displayPrograms = programs.length ? programs : upcomingFallback
-  const showingUpcomingOnly = programs.length === 0 && upcomingFallback.length > 0
+  if (loading) return <HomeSkeleton />
   const importantNotice = announcements.find(x => x.priority === 'urgent' || x.priority === 'high') ?? announcements[0]
 
   const dbQuickActions = (site?.quick_actions ?? []).filter((q: QuickAction) => q.enabled).sort((a, b) => a.order - b.order)
@@ -132,7 +119,7 @@ export default function Home() {
 
   const firstName = (profile?.full_name || '').trim().split(/\s+/)[0] || 'Member'
 
-  if (loadError && !aartis.length && !programs.length && !gallery.length) {
+  if (loadError && !aartis.length && !members.length && !gallery.length) {
     return (
       <div className="app-container py-16 text-center">
         <p className="text-4xl">📡</p>
@@ -156,21 +143,33 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Hero / Ganpati image */}
+      {/* Hero / Ganpati image — full-width, big, dynamic from site_settings.ganpati_image_url */}
       <section className="pt-4 md:pt-6">
-        <div className="relative rounded-2xl md:rounded-3xl overflow-hidden aspect-[4/3] sm:aspect-[16/10] md:aspect-[21/9] bg-gradient-to-br from-saffron via-orange-600 to-red-600 shadow-lg shadow-saffron/20">
-          {heroImage && (
-            <img src={heroImage} alt="Ganpati Bappa Morya" className="absolute inset-0 w-full h-full object-cover" loading="eager" />
+        <div
+          className="relative rounded-2xl md:rounded-3xl overflow-hidden bg-gradient-to-br from-saffron via-orange-600 to-red-600 shadow-lg shadow-saffron/20 flex items-end h-[340px] sm:h-[380px] md:h-[420px] lg:h-[460px]"
+        >
+          {heroImage ? (
+            <img
+              src={heroImage}
+              alt="Ganpati Bappa Morya"
+              className="absolute inset-0 w-full h-full object-cover object-center"
+              loading="eager"
+            />
+          ) : (
+            <span className="absolute inset-0 flex items-center justify-center font-devanagari text-white text-6xl md:text-7xl drop-shadow bg-gradient-to-br from-saffron via-orange-600 to-red-600" aria-hidden="true">
+              श्री
+            </span>
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-transparent" aria-hidden="true" />
-          <div className="relative z-10 absolute inset-x-0 bottom-0 flex flex-col items-start justify-end px-4 md:px-7 pb-3.5 md:pb-6">
-            <p className="font-devanagari font-extrabold text-white text-xl md:text-3xl leading-tight drop-shadow">{heroText}</p>
-            <p className="text-[11px] md:text-sm text-white/85 mt-1">Shivsaydri Ganesh Mandal{mandalVillage}</p>
+          <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-transparent pointer-events-none" aria-hidden="true" />
+          <div className="relative z-10 w-full flex flex-col items-start justify-end px-4 md:px-7 pb-4 md:pb-6">
+            <p className="font-devanagari font-extrabold text-white text-2xl md:text-4xl leading-tight drop-shadow-md">{heroText}</p>
+            <p className="font-devanagari text-white/95 text-sm md:text-lg mt-1 drop-shadow">॥ श्री गणेशाय नमः ॥</p>
+            <p className="text-[13px] md:text-base text-white/90 mt-0.5 drop-shadow">Shivsaydri Ganesh Mandal{mandalVillage}</p>
             <Link
               to="/aarti"
-              className="mt-2.5 md:mt-3 inline-flex items-center gap-1.5 bg-white text-saffron text-xs md:text-sm font-bold px-4 py-2 md:px-5 md:py-2.5 rounded-full active:scale-95 transition-transform"
+              className="mt-3 md:mt-4 inline-flex items-center gap-2 bg-white text-saffron text-sm md:text-base font-bold px-5 py-2.5 md:px-6 md:py-3 rounded-full active:scale-95 transition-transform shadow-md"
             >
-              <Play className="w-3.5 h-3.5 fill-current" aria-hidden="true" /> View Aarti
+              <span className="text-base md:text-lg" aria-hidden="true">🙏</span> View Aarti
             </Link>
           </div>
         </div>
@@ -239,40 +238,29 @@ export default function Home() {
 
         <section className="pt-6 md:pt-8 lg:pt-10">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm md:text-base font-bold text-gray-900">{t('home.programsTitle')}</h2>
-            <Link to="/programs" className="text-xs font-semibold text-saffron inline-flex items-center gap-0.5">
+            <h2 className="text-sm md:text-base font-bold text-gray-900">👥 {t('home.membersTitle')}</h2>
+            <Link to="/members" className="text-xs font-semibold text-saffron inline-flex items-center gap-0.5">
               {t('home.viewAll')} <ChevronRight className="w-3.5 h-3.5" aria-hidden="true" />
             </Link>
           </div>
-          {displayPrograms.length ? (
-            <div className="mt-3 space-y-2.5">
-              {displayPrograms.slice(0, 3).map((prog) => (
-                <Link key={prog.id} to={`/programs/${prog.id}`} className="card p-4 active:scale-[0.98] transition-transform">
-                  <div className="flex items-start gap-3">
-                    <span className="w-11 h-11 rounded-xl bg-saffron/10 text-saffron flex items-center justify-center shrink-0">
-                      <Calendar className="w-5 h-5" aria-hidden="true" />
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <p className="font-semibold text-gray-900 truncate">{prog.title}</p>
-                      <p className="text-xs text-gray-500 mt-0.5 flex items-center gap-1">
-                        <Clock className="w-3 h-3" aria-hidden="true" />
-                        {showingUpcomingOnly ? formatDate(prog.event_date) : 'Today'}
-                        {prog.start_time && <> • {formatTime(prog.start_time)}</>}
-                      </p>
-                      {prog.location && (
-                        <p className="text-xs text-gray-500 mt-0.5 flex items-center gap-1">
-                          <MapPin className="w-3 h-3" aria-hidden="true" /> {prog.location}
-                        </p>
-                      )}
-                    </div>
+          {members.length ? (
+            <div className="mt-3 grid grid-cols-2 gap-2.5">
+              {members.slice(0, membersPreviewCount).map((member) => (
+                <Link key={member.user_id} to="/members" className="card p-3 flex items-center gap-2.5 active:scale-[0.98] transition-transform min-w-0">
+                  <span className="w-9 h-9 rounded-full text-white text-sm font-bold flex items-center justify-center shrink-0" style={{ backgroundColor: getAvatarColor(member.full_name) }}>
+                    {getInitials(member.full_name)}
+                  </span>
+                  <div className="min-w-0">
+                    <p className="font-semibold text-gray-900 text-sm truncate">{member.full_name}</p>
+                    {member.position && <p className="text-[11px] text-gray-500 truncate">{member.position}</p>}
                   </div>
                 </Link>
               ))}
             </div>
           ) : (
             <div className="card mt-3 p-6 text-center text-sm text-gray-500">
-              <p className="text-2xl">📅</p>
-              <p className="mt-1">No programs scheduled today.</p>
+              <p className="text-2xl">👥</p>
+              <p className="mt-1">No members yet.</p>
             </div>
           )}
         </section>
@@ -378,7 +366,7 @@ function HomeSkeleton() {
         <div className="skeleton h-5 w-56 rounded-full" />
         <div className="skeleton h-3 w-40 rounded-full" />
       </div>
-      <div className="skeleton aspect-[4/3] sm:aspect-[16/10] md:aspect-[21/9] mt-5 rounded-2xl" />
+      <div className="skeleton h-[340px] sm:h-[380px] md:h-[420px] lg:h-[460px] mt-5 rounded-2xl" />
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-5">
         {Array.from({ length: 4 }).map((_, i) => (
           <div key={i} className="skeleton h-16 md:h-[72px] rounded-2xl" />

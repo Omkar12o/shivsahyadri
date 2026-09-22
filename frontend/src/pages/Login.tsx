@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Eye, EyeOff, ShieldCheck, UserPlus, LogIn, Mail, RefreshCw } from 'lucide-react'
+import { Eye, EyeOff, ShieldCheck, UserPlus, LogIn, Mail, RefreshCw, CheckCircle2 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/components/ToastProvider'
 import { useCooldown } from '@/hooks'
@@ -10,7 +10,7 @@ import { isAdminRole } from '@/types'
 import AuthLoadingScreen from '@/components/AuthLoadingScreen'
 
 export default function Login() {
-  const { signIn, loading } = useAuth()
+  const { signIn, loading, profile } = useAuth()
   const { success: toastSuccess, error: toastError, info: toastInfo } = useToast()
   const nav = useNavigate()
 
@@ -22,6 +22,19 @@ export default function Login() {
   const [resending, setResending] = useState(false)
   const resendCooldown = useCooldown('resend_verify')
   const [busy, setBusy] = useState(false)
+  const [justLoggedIn, setJustLoggedIn] = useState(false)
+  const navTimer = useRef<number | null>(null)
+
+  useEffect(() => {
+    if (!justLoggedIn) return
+    navTimer.current = window.setTimeout(() => nav('/home', { replace: true }), 2000)
+    return () => {
+      if (navTimer.current) {
+        clearTimeout(navTimer.current)
+        navTimer.current = null
+      }
+    }
+  }, [justLoggedIn, nav])
 
   if (loading) return <AuthLoadingScreen />
 
@@ -58,7 +71,7 @@ export default function Login() {
     }
 
     toastSuccess('✓ Login successful')
-    nav('/home', { replace: true })
+    setJustLoggedIn(true)
   }
 
   const resendEmail = async () => {
@@ -213,6 +226,30 @@ export default function Login() {
       </main>
 
       <p className="text-center text-xs text-gray-400 pb-6">Shivsaydri Ganesh Mandal • Private Members App</p>
+
+      {justLoggedIn && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-xs rounded-2xl bg-white p-6 text-center shadow-2xl animate-scale-in">
+            <div className="mx-auto w-16 h-16 rounded-full bg-green-100 flex items-center justify-center">
+              <CheckCircle2 className="w-9 h-9 text-green-600" aria-hidden="true" />
+            </div>
+            <h2 className="mt-3 text-lg font-bold text-gray-900">Login Successful!</h2>
+            <p className="text-sm text-gray-500 mt-1">
+              Welcome back{profile?.full_name ? `, ${profile.full_name.split(' ')[0]}` : ''}. Redirecting…
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                setJustLoggedIn(false)
+                nav('/home', { replace: true })
+              }}
+              className="btn-primary w-full justify-center mt-5"
+            >
+              Continue
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

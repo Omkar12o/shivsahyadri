@@ -103,7 +103,8 @@ export default function Login() {
               <LogIn className="w-5 h-5 text-saffron" aria-hidden="true" /> Member Login
             </h2>
             <p className="text-sm text-gray-500 mt-1">
-              Use the <b>username</b> you chose when you joined (or your email) and the password you set.
+              Login with your <b>username</b> or <b>email</b> and the password you set. No email
+              verification needed — you can sign in right away.
             </p>
 
             <form onSubmit={submit} className="mt-5 space-y-4">
@@ -158,8 +159,9 @@ export default function Login() {
                 <div className="rounded-xl bg-orange-50 border border-orange-200 p-4 text-sm text-gray-700 animate-scale-in">
                   <p className="font-bold text-gray-800 flex items-center gap-2"><Mail className="w-4 h-4 text-orange-600" aria-hidden="true" /> Almost there!</p>
                   <p className="mt-1">
-                    We sent a confirmation link to <b className="text-gray-800">{verifyEmail}</b>. Open it from your email
-                    (check <b>Spam</b> too) and then log in again.
+                    Accounts are now confirmed automatically — just press <b>Login</b> again and it should let
+                    you in. If it still requests verification for <b className="text-gray-800">{verifyEmail}</b>, tap
+                    below to resend the confirmation link (check <b>Spam</b> too).
                   </p>
                   <button
                     type="button"

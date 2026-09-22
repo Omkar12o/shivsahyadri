@@ -161,7 +161,7 @@ export default function MemberRegister() {
       setErrors(EMPTY_ERRORS)
 
       if (res.needsEmailConfirmation) {
-        toastInfo('✓ Account created. Please check your email to verify your account.')
+        toastInfo('✓ Account created — you can log in now.')
         setStage('verify')
         return
       }
@@ -215,15 +215,20 @@ export default function MemberRegister() {
               <div className="mx-auto w-14 h-14 rounded-full bg-green-50 flex items-center justify-center">
                 <CheckCircle2 className="w-8 h-8 text-green-600" aria-hidden="true" />
               </div>
-              <h1 className="mt-3 text-xl font-bold text-gray-900">Account created</h1>
+              <h1 className="mt-3 text-xl font-bold text-gray-900">Account created!</h1>
               <p className="text-sm text-gray-600 mt-2">
-                Please check your email to verify your account.
+                Your account is confirmed automatically — there is nothing to wait for.
+                You can log in right now with your username or email.
               </p>
-              <p className="text-xs text-gray-500 mt-1">
-                We sent a confirmation link to <b className="text-gray-800">{email}</b>. Don't see it? Check your spam folder.
+              <p className="text-xs text-gray-500 mt-2">
+                If you ever get asked to "verify your email", just press <b>Login</b> again —
+                the confirmation is applied instantly and the block clears.
               </p>
 
               <div className="mt-6 space-y-3">
+                <Link to="/member/login" className="btn-primary w-full justify-center">
+                  <LogIn className="w-4 h-4 mr-2" aria-hidden="true" /> Login Now
+                </Link>
                 <button
                   type="button"
                   onClick={resendEmail}
@@ -233,11 +238,8 @@ export default function MemberRegister() {
                   <RefreshCw className="w-4 h-4 mr-2" aria-hidden="true" />
                   {resendCooldown.remaining > 0
                     ? `Resend available in ${resendCooldown.remaining}s`
-                    : 'Resend verification email'}
+                    : 'Resend confirmation link (if needed)'}
                 </button>
-                <Link to="/member/login" className="btn-primary w-full justify-center">
-                  <LogIn className="w-4 h-4 mr-2" aria-hidden="true" /> Go to Login
-                </Link>
               </div>
             </div>
           </div>

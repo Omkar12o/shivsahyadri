@@ -1,7 +1,7 @@
 import { supabase } from '@/lib/supabase'
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
-import { Bell, Home, Music, Calendar, Images, MoreHorizontal } from 'lucide-react'
+import { Bell, Home, Music, Calendar, Images, MoreHorizontal, Megaphone } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useNotifications } from '@/contexts/NotificationContext'
 import { useChatUnread } from '@/contexts/ChatUnreadContext'
@@ -124,6 +124,14 @@ export default function Layout() {
             </nav>
 
             <div className="flex items-center gap-1 shrink-0 ml-auto md:ml-0">
+              <Link
+                to="/member/notifications?type=announcement"
+                className="p-2 rounded-lg text-gray-700 active:bg-saffron/10"
+                aria-label="Announcements"
+                title="Announcements"
+              >
+                <Megaphone className="w-5 h-5" aria-hidden="true" />
+              </Link>
               <Link
                 to="/member/notifications"
                 className="relative p-2 rounded-lg text-gray-700 active:bg-saffron/10"

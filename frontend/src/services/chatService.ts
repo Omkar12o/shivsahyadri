@@ -7,7 +7,13 @@ export interface ChatMessageRow extends ChatMessage {
   sender?: ChatSender['profile']
 }
 
-const SENDER_SELECT = '*, sender:public_member_directory(id, full_name, profile_photo_url, role)'
+// chat_messages has TWO foreign keys to profiles (user_id + deleted_by), so the
+// embed MUST be disambiguated with an explicit constraint hint, otherwise
+// PostgREST returns "more than one relation found" and the chat fails to load.
+// profiles RLS filters rows a member can't read (their own row only), so the
+// embed returns null for others — MemberChat fills sender info from the public
+// member directory map (which every authenticated user can read).
+const SENDER_SELECT = '*, sender:profiles!chat_messages_user_id_fkey(id, full_name, profile_photo_url, role)'
 
 /**
  * Community chat (text-only). RLS guarantees:

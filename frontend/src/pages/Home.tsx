@@ -45,6 +45,7 @@ export default function Home() {
   const { t } = useLanguage()
   const [aartis, setAartis] = useState<Aarti[]>([])
   const [programs, setPrograms] = useState<Program[]>([])
+  const [upcomingFallback, setUpcomingFallback] = useState<Program[]>([])
   const [announcements, setAnnouncements] = useState<Announcement[]>([])
   const [gallery, setGallery] = useState<GalleryImage[]>([])
   const [birthdays, setBirthdays] = useState<Notification[]>([])
@@ -75,6 +76,18 @@ export default function Home() {
         if (!alive) return
         setAartis(a)
         setPrograms(p)
+        // When nothing is scheduled today, fall back to upcoming programs so the
+        // section stays dynamic instead of showing a static empty state.
+        if (p.length === 0) {
+          const todayKey = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' })
+          const upcoming = await programService
+            .list()
+            .then(list => list.filter(x => x.event_date >= todayKey).slice(0, 3))
+            .catch(() => [])
+          if (alive) setUpcomingFallback(upcoming)
+        } else {
+          setUpcomingFallback([])
+        }
         setAnnouncements(an)
         setGallery(g)
         setBirthdays(b)
@@ -102,7 +115,8 @@ export default function Home() {
 
   if (loading) return <LoadingScreen label="Loading Mandal..." />
 
-  const upcomingPrograms = programs.length ? programs : []
+  const displayPrograms = programs.length ? programs : upcomingFallback
+  const showingUpcomingOnly = programs.length === 0 && upcomingFallback.length > 0
   const importantNotice = announcements.find(a => a.priority === 'urgent' || a.priority === 'high') ?? announcements[0]
 
   const quickActions = (site?.quick_actions ?? []).filter((q: QuickAction) => q.enabled).sort((a, b) => a.order - b.order)
@@ -210,36 +224,41 @@ export default function Home() {
           <h2 className="text-2xl md:text-3xl font-bold">{site?.programs_title ?? t('hero.today') + "'s Program"}</h2>
           <Link to="/programs" className="text-sm font-medium text-saffron hover:underline">View All Programs →</Link>
         </div>
-        {upcomingPrograms.length === 0 ? (
+        {displayPrograms.length === 0 ? (
           <div className="card p-8 text-center text-gray-500">
             <Clock className="w-8 h-8 mx-auto mb-2 text-gray-300" aria-hidden="true" />
             <p>No programs scheduled for today.</p>
             <p className="text-sm">Check Programs page for upcoming events.</p>
           </div>
         ) : (
-          <div className="grid md:grid-cols-2 gap-4">
-            {upcomingPrograms.map(p => (
-              <Link
-                key={p.id}
-                to="/programs"
-                className="card p-5 flex gap-4 hover:shadow-md transition-shadow"
-              >
-                {p.image_url ? (
-                  <img src={p.image_url} alt={p.title} className="w-20 h-20 md:w-24 md:h-24 rounded-2xl object-cover shrink-0" loading="lazy" />
-                ) : (
-                  <div className="w-14 h-14 rounded-2xl bg-saffron/10 flex items-center justify-center text-saffron shrink-0">
-                    <Calendar className="w-6 h-6" aria-hidden="true" />
+          <>
+            {showingUpcomingOnly && (
+              <p className="text-sm text-gray-500 mb-3">No programs today — here's what's coming up:</p>
+            )}
+            <div className="grid md:grid-cols-2 gap-4">
+              {displayPrograms.map(p => (
+                <Link
+                  key={p.id}
+                  to="/programs"
+                  className="card p-5 flex gap-4 hover:shadow-md transition-shadow"
+                >
+                  {p.image_url ? (
+                    <img src={p.image_url} alt={p.title} className="w-20 h-20 md:w-24 md:h-24 rounded-2xl object-cover shrink-0" loading="lazy" />
+                  ) : (
+                    <div className="w-14 h-14 rounded-2xl bg-saffron/10 flex items-center justify-center text-saffron shrink-0">
+                      <Calendar className="w-6 h-6" aria-hidden="true" />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-gray-900 truncate">{p.title}</p>
+                    <p className="text-sm text-gray-500 flex gap-2"><Clock className="w-4 h-4" aria-hidden="true" />{formatDate(p.event_date)}{p.start_time ? ` • ${formatTime(p.start_time)}` : ''}{p.end_time ? ` - ${formatTime(p.end_time)}` : ''}</p>
+                    {p.location && <p className="text-xs text-gray-400 flex gap-1"><MapPin className="w-3 h-3" aria-hidden="true" />{p.location}</p>}
+                    {p.description && <p className="text-sm text-gray-600 mt-1 line-clamp-2">{p.description}</p>}
                   </div>
-                )}
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-gray-900 truncate">{p.title}</p>
-                  <p className="text-sm text-gray-500 flex gap-2"><Clock className="w-4 h-4" aria-hidden="true" />{formatTime(p.start_time)}{p.end_time ? ` - ${formatTime(p.end_time)}` : ''}</p>
-                  {p.location && <p className="text-xs text-gray-400 flex gap-1"><MapPin className="w-3 h-3" aria-hidden="true" />{p.location}</p>}
-                  {p.description && <p className="text-sm text-gray-600 mt-1 line-clamp-2">{p.description}</p>}
-                </div>
-              </Link>
-            ))}
-          </div>
+                </Link>
+              ))}
+            </div>
+          </>
         )}
       </section>
 

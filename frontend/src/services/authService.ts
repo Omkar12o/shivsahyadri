@@ -119,11 +119,8 @@ export const authService = {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) {
       const message = error.message || ''
-      if (/invalid login credentials/i.test(message)) {
-        return { error: 'Invalid username or password.', email: null }
-      }
       if (/email not confirmed|confirm your email/i.test(message)) {
-        return { error: 'Please verify your email before logging in.', email: null }
+        return { error: 'Please verify your email before logging in.', email }
       }
       if (/rate limit|too many requests/i.test(message)) {
         return { error: 'Too many attempts. Please wait a moment and try again.', email: null }

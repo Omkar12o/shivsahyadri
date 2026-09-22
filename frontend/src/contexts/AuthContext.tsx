@@ -9,6 +9,7 @@ import type { Profile, RegisterData, Session, UserRole } from '@/types'
 export interface SignInResult {
   error: string | null
   role: UserRole | null
+  email?: string | null
 }
 
 interface AuthContextType {
@@ -142,7 +143,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signIn = useCallback(async (identifier: string, password: string): Promise<SignInResult> => {
     const res = await authService.signIn(identifier, password)
-    if (res.error) return { error: res.error, role: null }
+    if (res.error) return { error: res.error, role: null, email: res.email ?? null }
 
     const { data: sessionData } = await supabase.auth.getSession()
     const authUserId = sessionData.session?.user.id

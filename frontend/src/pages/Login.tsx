@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Eye, EyeOff, ShieldCheck, UserPlus, LogIn } from 'lucide-react'
+import { Eye, EyeOff, ShieldCheck, UserPlus, LogIn, Mail, RefreshCw } from 'lucide-react'
+import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/components/ToastProvider'
 import { isAdminRole } from '@/types'
@@ -8,13 +9,15 @@ import AuthLoadingScreen from '@/components/AuthLoadingScreen'
 
 export default function Login() {
   const { signIn, loading } = useAuth()
-  const { success: toastSuccess, error: toastError } = useToast()
+  const { success: toastSuccess, error: toastError, info: toastInfo } = useToast()
   const nav = useNavigate()
 
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [verifyEmail, setVerifyEmail] = useState<string | null>(null)
+  const [resending, setResending] = useState(false)
   const [busy, setBusy] = useState(false)
 
   if (loading) return <AuthLoadingScreen />
@@ -22,6 +25,7 @@ export default function Login() {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
+    setVerifyEmail(null)
     if (!username.trim() || !password) {
       setError('Please enter your username and password.')
       return
@@ -32,7 +36,11 @@ export default function Login() {
 
     if (res.error) {
       setError(res.error)
-      toastError(`✕ ${res.error}`)
+      if (/verify your email|not confirmed|confirmation/i.test(res.error)) {
+        setVerifyEmail(res.email ?? username.trim())
+      } else {
+        toastError(`✕ ${res.error}`)
+      }
       return
     }
     if (res.role === null) {
@@ -48,6 +56,22 @@ export default function Login() {
 
     toastSuccess('✓ Login successful')
     nav('/member/dashboard', { replace: true })
+  }
+
+  const resendEmail = async () => {
+    if (!verifyEmail) return
+    setResending(true)
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
+      email: verifyEmail,
+      options: { emailRedirectTo: `${window.location.origin}/member/login` },
+    })
+    setResending(false)
+    if (error) {
+      toastError(error.message || 'Could not resend the email. Please try again.')
+    } else {
+      toastInfo('✓ Confirmation email sent again for ' + verifyEmail)
+    }
   }
 
   return (
@@ -78,12 +102,23 @@ export default function Login() {
             <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
               <LogIn className="w-5 h-5 text-saffron" aria-hidden="true" /> Member Login
             </h2>
-            <p className="text-sm text-gray-500 mt-1">Enter your username and password to access the Mandal app.</p>
+            <p className="text-sm text-gray-500 mt-1">
+              Use the <b>username</b> you chose when you joined (or your email) and the password you set.
+            </p>
+
+            <div className="mt-4 rounded-xl bg-saffron/5 border border-saffron/20 px-4 py-3 text-xs text-gray-600">
+              <p className="font-semibold text-gray-700">How it works:</p>
+              <ol className="list-decimal list-inside mt-1 space-y-0.5">
+                <li>Enter your username — e.g. <b>rahul123</b></li>
+                <li>Enter the password you chose when registering</li>
+                <li>Tap <b>Login</b> — you're in 😊</li>
+              </ol>
+            </div>
 
             <form onSubmit={submit} className="mt-5 space-y-4">
               <div>
                 <label className="label" htmlFor="login-username">
-                  Username
+                  Username <span className="text-xs text-gray-400">(or email)</span>
                 </label>
                 <input
                   id="login-username"
@@ -92,8 +127,9 @@ export default function Login() {
                   onChange={(e) => setUsername(e.target.value)}
                   required
                   autoComplete="username"
-                  placeholder="e.g. rahul123 or your email"
+                  placeholder="e.g. rahul123"
                 />
+                <p className="text-xs text-gray-400 mt-1">This is the name you picked when you created your account, not your full name.</p>
               </div>
 
               <div>
@@ -120,10 +156,30 @@ export default function Login() {
                     {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
                 </div>
+                <p className="text-xs text-gray-400 mt-1">Forgot it? Use the "Forgot Password?" link below.</p>
               </div>
 
               {error && (
                 <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl p-3">{error}</p>
+              )}
+
+              {verifyEmail && (
+                <div className="rounded-xl bg-orange-50 border border-orange-200 p-4 text-sm text-gray-700 animate-scale-in">
+                  <p className="font-bold text-gray-800 flex items-center gap-2"><Mail className="w-4 h-4 text-orange-600" aria-hidden="true" /> Almost there!</p>
+                  <p className="mt-1">
+                    We sent a confirmation link to <b className="text-gray-800">{verifyEmail}</b>. Open it from your email
+                    (check <b>Spam</b> too) and then log in again.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={resendEmail}
+                    disabled={resending}
+                    className="mt-3 inline-flex items-center gap-2 text-saffron font-semibold hover:underline disabled:opacity-60"
+                  >
+                    {resending ? <RefreshCw className="w-4 h-4 animate-spin" aria-hidden="true" /> : <RefreshCw className="w-4 h-4" aria-hidden="true" />}
+                    {resending ? 'Sending…' : 'Resend confirmation email'}
+                  </button>
+                </div>
               )}
 
               <button type="submit" className="btn-primary w-full justify-center py-3 text-base" disabled={busy}>

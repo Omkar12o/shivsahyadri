@@ -3,10 +3,11 @@ import { useAuth } from '@/contexts/AuthContext'
 import { formatBirthday } from '@/utils'
 export default function Profile(){
   const { profile, updateProfile, changePassword, uploadProfilePhoto } = useAuth()
-  const [form,setForm]=useState({ full_name: profile?.full_name ?? '', village: profile?.village ?? '', address: profile?.address ?? '', mobile: profile?.mobile ?? '', birthday_visibility: profile?.birthday_visibility ?? true })
+  const [form,setForm]=useState({ full_name: profile?.full_name ?? '', village: profile?.village ?? '', address: profile?.address ?? '', mobile: profile?.mobile ?? '', date_of_birth: profile?.date_of_birth ?? '', birthday_visibility: profile?.birthday_visibility ?? true })
   const [msg,setMsg]=useState<string|null>(null)
   const [pw,setPw]=useState('')
   if(!profile) return <div className="container-main px-4 py-10">Not logged in</div>
+  const today = new Date().toISOString().split('T')[0]
   return (
     <div className="container-main px-4 py-10 max-w-2xl mx-auto">
       <h1 className="page-title">My Profile</h1>
@@ -20,7 +21,11 @@ export default function Profile(){
         <div><label className="label">Village</label><input className="input" value={form.village} onChange={e=>setForm({...form,village:e.target.value})}/></div>
         <div><label className="label">Address</label><input className="input" value={form.address} onChange={e=>setForm({...form,address:e.target.value})}/></div>
         <div><label className="label">Mobile</label><input className="input" value={form.mobile} onChange={e=>setForm({...form,mobile:e.target.value})}/></div>
-        <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.birthday_visibility} onChange={e=>setForm({...form,birthday_visibility:e.target.checked})}/> Show my birthday</label>
+        <div>
+          <label className="label" htmlFor="profile-birthday">Birthday <span className="text-xs text-gray-400">(optional — let the Mandal celebrate with you 🎂)</span></label>
+          <input id="profile-birthday" type="date" className="input" value={form.date_of_birth ?? ''} max={today} onChange={e=>setForm({...form,date_of_birth:e.target.value})}/>
+        </div>
+        <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.birthday_visibility} onChange={e=>setForm({...form,birthday_visibility:e.target.checked})}/> Show my birthday to other members</label>
         {msg && <p className="text-sm bg-green-50 border border-green-200 rounded-xl p-3">{msg}</p>}
         <button className="btn-primary" onClick={async()=>{ const r=await updateProfile(form as any); setMsg(r.error ?? 'Saved') }}>Save</button>
       </div>

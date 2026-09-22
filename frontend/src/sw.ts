@@ -92,8 +92,8 @@ function parsePushPayload(data: PushPayload): PushPayload {
     title: data?.title || 'Shivsaydri Ganesh Mandal',
     body: data?.body,
     url: data?.data?.url || data?.url || '/',
-    icon: data?.icon || '/pwa-192x192.png',
-    badge: data?.badge || '/pwa-192x192.png',
+    icon: data?.icon || '/icons/icon-192.png',
+    badge: data?.badge || '/icons/icon-192.png',
   }
 }
 

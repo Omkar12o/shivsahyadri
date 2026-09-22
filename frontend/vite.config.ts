@@ -15,7 +15,7 @@ export default defineConfig({
       strategies: 'injectManifest',
       srcDir: 'src',
       filename: 'sw.ts',
-      includeAssets: ['favicon.svg', 'robots.txt', 'apple-touch-icon.png', 'icons.svg'],
+      includeAssets: ['robots.txt', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png'],
       manifest: {
         id: '/',
         name: 'Shivsaydri Ganesh Mandal',
@@ -29,17 +29,17 @@ export default defineConfig({
         scope: '/',
         start_url: '/',
         icons: [
-          { src: '/pwa-192x192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
-          { src: '/pwa-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
-          { src: '/pwa-maskable-192x192.png', sizes: '192x192', type: 'image/png', purpose: 'maskable' },
-          { src: '/pwa-maskable-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+          { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+          { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+          { src: '/icons/icon-maskable-192.png', sizes: '192x192', type: 'image/png', purpose: 'maskable' },
+          { src: '/icons/icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ],
         categories: ['lifestyle', 'education', 'social'],
         lang: 'mr-IN',
         dir: 'ltr',
       },
       injectManifest: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}', 'logo.jpeg', 'favicon.svg'],
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}', 'logo.jpeg'],
         maximumFileSizeToCacheInBytes: 10 * 1024 * 1024,
       },
       devOptions: {

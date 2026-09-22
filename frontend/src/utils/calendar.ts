@@ -6,6 +6,18 @@
 
 export const KOLKATA = 'Asia/Kolkata'
 
+/** Calendar event type options (labels used in filters + admin pickers). */
+export const EVENT_TYPE_OPTIONS = [
+  { value: 'aarti', label: '🙏 Aarti' },
+  { value: 'program', label: '📅 Program' },
+  { value: 'meeting', label: '🤝 Meeting' },
+  { value: 'festival', label: '🎉 Festival' },
+  { value: 'announcement', label: '📢 Announcement' },
+  { value: 'donation', label: '💰 Donation Event' },
+  { value: 'cultural', label: '🏆 Cultural Event' },
+  { value: 'other', label: '📌 Other' },
+]
+
 /** A date "now" in IST (components preserved as if local). */
 export function nowIST(): Date {
   const s = new Date().toLocaleString('en-US', { timeZone: KOLKATA })

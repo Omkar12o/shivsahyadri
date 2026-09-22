@@ -4,10 +4,9 @@ import { calendarEventService } from '@/services/calendarEventService'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/components/ToastProvider'
 import ConfirmDialog from '@/components/ConfirmDialog'
-import { EVENT_TYPE_OPTIONS } from '@/pages/CalendarPage'
 import type { CalendarEvent } from '@/types'
 import { cn, getErrorMessage } from '@/utils'
-import { KOLKATA, formatKolkataDate, formatKolkataTime, formatDateInputValue } from '@/utils/calendar'
+import { KOLKATA, formatKolkataDate, formatKolkataTime, formatDateInputValue, EVENT_TYPE_OPTIONS } from '@/utils/calendar'
 
 type Payload = {
   title: string

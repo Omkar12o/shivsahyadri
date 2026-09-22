@@ -1,16 +1,15 @@
 -- ============================================================================
--- FILE: 20260101002400_chat_permissions.sql
+-- RUN_CHAT_FIX.sql
 --
--- Turns the member chat into a proper group chat with strict, user-scoped RLS:
---   * members can READ all messages (including soft-deleted rows) so the app
---     can render the "This message was deleted" placeholder
---   * members can only SOFT-DELETE their OWN message (content is cleared)
---   * admins can soft-delete any message, super admins can hard delete
---   * the message column drops NOT NULL so deleted content is purged
---   * a trigger forbids ANY other kind of UPDATE (members cannot edit content)
+-- Run ONCE in the Supabase Dashboard SQL editor to fix the member chat
+-- permissions. Safe to re-run. Paste the FULL contents below.
 --
--- BULLETPROOF-ish and idempotent: every statement is guarded, and this script
--- can be re-run safely.
+-- What it does:
+--   1. chat_messages.message becomes nullable (so deleted content is purged)
+--   2. members can READ all messages incl. soft-deleted (placeholders render)
+--   3. members can soft-DELETE only their OWN message (clear content)
+--   4. a trigger block any other kind of UPDATE (no editing texts)
+--   5. admins keep soft-delete of any message, super admins keep hard delete
 -- ============================================================================
 
 -- 1) Allow clearing the content of a soft-deleted message (privacy).

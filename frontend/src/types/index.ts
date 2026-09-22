@@ -158,7 +158,7 @@ export interface PushSubscription {
 export interface ChatMessage {
   id: string
   user_id: string
-  message: string
+  message: string | null
   created_at: string
   updated_at: string
   deleted_at: string | null

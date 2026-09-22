@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom'
 import App from './App'
 import { AuthProvider } from './contexts/AuthContext'
 import { NotificationProvider } from './contexts/NotificationContext'
+import { ChatUnreadProvider } from './contexts/ChatUnreadContext'
 import { LanguageProvider } from './contexts/LanguageContext'
 import { ToastProvider } from './components/ToastProvider'
 import './styles/index.css'
@@ -42,7 +43,9 @@ ReactDOM.createRoot(document.getElementById('app')!).render(
         <LanguageProvider>
           <AuthProvider>
             <NotificationProvider>
-              <App />
+              <ChatUnreadProvider>
+                <App />
+              </ChatUnreadProvider>
             </NotificationProvider>
           </AuthProvider>
         </LanguageProvider>

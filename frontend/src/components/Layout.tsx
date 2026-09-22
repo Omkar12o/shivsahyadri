@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { Bell, Home, Music, Calendar, Images, MoreHorizontal } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useNotifications } from '@/contexts/NotificationContext'
+import { useChatUnread } from '@/contexts/ChatUnreadContext'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { useToast } from '@/components/ToastProvider'
 import PopupNotice from '@/components/PopupNotice'
@@ -26,6 +27,7 @@ const DESKTOP_NAV = [
   { path: '/members', label: 'Members' },
   { path: '/videos', label: 'Videos' },
   { path: '/donation', label: 'Donation' },
+  { path: '/member/chat', label: 'Chat' },
   { path: '/more', label: 'More' },
 ]
 
@@ -33,6 +35,7 @@ export default function Layout() {
   const { profile, signOut } = useAuth()
   const { success: toastSuccess } = useToast()
   const { unreadCount } = useNotifications()
+  const { chatUnread } = useChatUnread()
   const { t } = useLanguage()
   const location = useLocation()
   const nav = useNavigate()
@@ -105,11 +108,16 @@ export default function Layout() {
                     key={item.path}
                     to={item.path}
                     className={cn(
-                      'px-3 py-2 rounded-xl text-sm font-semibold transition-colors whitespace-nowrap',
+                      'px-3 py-2 rounded-xl text-sm font-semibold transition-colors whitespace-nowrap flex items-center gap-1.5',
                       active ? 'text-saffron bg-saffron/10' : 'text-gray-600 hover:text-saffron hover:bg-saffron/5',
                     )}
                   >
                     {item.label}
+                    {item.path === '/member/chat' && chatUnread > 0 && (
+                      <span className="min-w-[18px] h-[18px] px-1 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                        {chatUnread > 9 ? '9+' : chatUnread}
+                      </span>
+                    )}
                   </Link>
                 )
               })}

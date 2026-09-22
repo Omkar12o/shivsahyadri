@@ -3,21 +3,38 @@ import { getErrorMessage } from '@/utils'
 import type { ChatMessage, ChatSender } from '@/types'
 
 export interface ChatMessageRow extends ChatMessage {
+  /** sender joined from public_member_directory (also returned by send().select) */
   sender?: ChatSender['profile']
 }
 
+const SENDER_SELECT = '*, sender:public_member_directory(id, full_name, profile_photo_url, role)'
+
 /**
  * Community chat (text-only). RLS guarantees:
- *  - members can read + insert their own messages
- *  - members cannot update/delete anyone else's
- *  - admins soft delete, super admins hard delete
+ *  - members can read all messages + insert their own
+ *  - members can only soft-delete their OWN message (message -> NULL, deleted_at set)
+ *  - admins can soft-delete any message, super admins can hard delete
+ * Soft-deleted rows are still selected so the UI can render
+ * "This message was deleted".
  */
 export const chatService = {
-  async list(limit = 100): Promise<ChatMessageRow[]> {
+  /** Latest `limit` messages (newest first internally, returned oldest -> newest). */
+  async list(limit = 50): Promise<ChatMessageRow[]> {
     const { data, error } = await supabase
       .from('chat_messages')
-      .select('*, sender:public_member_directory(id, full_name, profile_photo_url, role)')
-      .is('deleted_at', null)
+      .select(SENDER_SELECT)
+      .order('created_at', { ascending: false })
+      .limit(limit)
+    if (error) throw new Error(getErrorMessage(error))
+    return ((data ?? []) as ChatMessageRow[]).reverse()
+  },
+
+  /** Older messages before `before` for scroll-up pagination. */
+  async listBefore(before: ChatMessageRow, limit = 25): Promise<ChatMessageRow[]> {
+    const { data, error } = await supabase
+      .from('chat_messages')
+      .select(SENDER_SELECT)
+      .or(`created_at.lt.${before.created_at},and(created_at.eq.${before.created_at},id.lt.${before.id})`)
       .order('created_at', { ascending: false })
       .limit(limit)
     if (error) throw new Error(getErrorMessage(error))
@@ -35,25 +52,26 @@ export const chatService = {
     const { data, error } = await supabase
       .from('chat_messages')
       .insert(payload)
-      .select(
-        '*, sender:public_member_directory(id, full_name, profile_photo_url, role)',
-      )
+      .select(SENDER_SELECT)
       .single()
     if (error) throw new Error(getErrorMessage(error))
     return data as ChatMessageRow
   },
 
-  /** Admin soft delete. */
+  /**
+   * Soft delete: members delete their own message, admins any message.
+   * Content is NULLed so privacy holds; the row still renders as deleted.
+   */
   async softDelete(messageId: string): Promise<void> {
     const currentProfile = await currentProfileId()
     const { error } = await supabase
       .from('chat_messages')
-      .update({ deleted_at: new Date().toISOString(), deleted_by: currentProfile })
+      .update({ message: null, deleted_at: new Date().toISOString(), deleted_by: currentProfile })
       .eq('id', messageId)
     if (error) throw new Error(getErrorMessage(error))
   },
 
-  /** Super admin permanent delete. */
+  /** Super admin permanent delete (also removes the row entirely). */
   async hardDelete(messageId: string): Promise<void> {
     const { error } = await supabase.from('chat_messages').delete().eq('id', messageId)
     if (error) throw new Error(getErrorMessage(error))
@@ -70,31 +88,30 @@ export const chatService = {
     return (data ?? []) as ChatMessageRow[]
   },
 
-  subscribe(onMessage: (message: ChatMessageRow) => void, onDeleted?: (id: string) => void): () => void {
+  /** Realtime: upsert for INSERT (new) and UPDATE (soft delete placeholder/change), remove for DELETE. */
+  subscribe(onUpsert: (message: ChatMessageRow) => void, onDelete: (id: string) => void): () => void {
     const channel = supabase
       .channel('community-chat')
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'chat_messages' },
         (payload) => {
-          const row = payload.new as ChatMessageRow
-          if (row.deleted_at) return
-          onMessage(row)
+          onUpsert(payload.new as ChatMessageRow)
         },
       )
       .on(
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'chat_messages' },
         (payload) => {
-          const row = payload.new as ChatMessageRow
-          if (row.deleted_at && onDeleted) onDeleted(row.id)
+          if ((payload.old as ChatMessageRow).deleted_at) return
+          onUpsert(payload.new as ChatMessageRow)
         },
       )
       .on(
         'postgres_changes',
         { event: 'DELETE', schema: 'public', table: 'chat_messages' },
         (payload) => {
-          if (onDeleted) onDeleted((payload.old as { id: string }).id)
+          onDelete((payload.old as { id: string }).id)
         },
       )
       .subscribe()

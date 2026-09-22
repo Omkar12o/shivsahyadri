@@ -21,6 +21,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useNotifications } from '@/contexts/NotificationContext'
+import { useChatUnread } from '@/contexts/ChatUnreadContext'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { useToast } from '@/components/ToastProvider'
 import { cn, getInitials, getAvatarColor } from '@/utils'
@@ -62,6 +63,7 @@ export default function More() {
   const { profile, isAdmin, signOut } = useAuth()
   const { success: toastSuccess, error: toastError } = useToast()
   const { unreadCount } = useNotifications()
+  const { chatUnread } = useChatUnread()
   const { lang, setLang, t } = useLanguage()
   const nav = useNavigate()
   const [site, setSite] = useState<SiteSettings | null>(null)
@@ -107,7 +109,7 @@ export default function More() {
   ]
 
   const communityRows: Row[] = [
-    { label: 'Community Chat', to: '/member/chat', icon: <MessageCircle className="w-5 h-5" aria-hidden="true" /> },
+    { label: 'Community Chat', to: '/member/chat', icon: <MessageCircle className="w-5 h-5" aria-hidden="true" />, badge: chatUnread },
     { label: 'Dashboard', to: '/member/dashboard', icon: <Sparkles className="w-5 h-5" aria-hidden="true" /> },
   ]
 

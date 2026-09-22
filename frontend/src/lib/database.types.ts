@@ -440,7 +440,7 @@ export interface Database {
         Row: {
           id: string
           user_id: string
-          message: string
+          message: string | null
           created_at: string
           updated_at: string
           deleted_at: string | null
@@ -458,7 +458,7 @@ export interface Database {
         Update: {
           id?: string
           user_id?: string
-          message?: string
+          message?: string | null
           created_at?: string
           updated_at?: string
           deleted_at?: string | null

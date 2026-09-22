@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Search, Trash2, Loader2, ShieldAlert } from 'lucide-react'
+import { Search, Loader2, ShieldAlert } from 'lucide-react'
 import { chatService, type ChatMessageRow } from '@/services/chatService'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
@@ -130,7 +130,9 @@ export default function AdminChat() {
                   <span className="text-xs text-gray-400">{formatChatTime(m.created_at)}</span>
                   {m.deleted_at && <span className="text-[11px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded ml-auto">Deleted</span>}
                 </div>
-                <p className={cn('text-sm mt-1.5 whitespace-pre-wrap break-words', m.deleted_at && 'line-through text-gray-400')}>{m.message}</p>
+                <p className={cn('text-sm mt-1.5 whitespace-pre-wrap break-words', m.deleted_at && 'line-through text-gray-400 italic')}>
+                  {m.deleted_at ? 'This message was deleted' : m.message}
+                </p>
                 {!m.deleted_at && (
                   <div className="mt-2 flex gap-2">
                     <button onClick={() => setDeleteTarget(m)} className="btn-outline text-xs px-3 py-1 text-red-600 border-red-300 hover:bg-red-50">Delete</button>
@@ -148,7 +150,7 @@ export default function AdminChat() {
       <ConfirmDialog
         open={Boolean(deleteTarget)}
         title="Delete this message?"
-        message={<><b>"{deleteTarget?.message.slice(0, 80)}"</b><br />This action cannot be undone for members.</>}
+        message={<><b>"{deleteTarget?.message?.slice(0, 80) ?? 'This message was deleted'}"</b><br />This action cannot be undone for members.</>}
         confirmLabel="Delete Message"
         busy={deleting}
         onConfirm={softDelete}

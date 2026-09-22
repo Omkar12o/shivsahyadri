@@ -1661,3 +1661,67 @@ begin
     execute 'grant select on public.notification_reads to anon, authenticated';
   end if;
 end $$;
+
+-- ============================================================================
+-- ============================================================================
+-- FILE: 20260101002400_chat_permissions.sql
+--
+-- Member community chat permissions:
+--   * members READ all messages incl. soft-deleted (deleted placeholder)
+--   * members may only SOFT-DELETE their OWN message (content is cleared)
+--   * admins keep soft-delete of any message, super admins keep hard delete
+--   * chat_messages.message drops NOT NULL so deleted content is purged
+--   * a trigger blocks any OTHER kind of UPDATE (no text editing)
+-- Idempotent: safe to re-run.
+-- ============================================================================
+
+do $$
+begin
+  alter table public.chat_messages alter column message drop not null;
+exception
+  when undefined_table then null;
+end $$;
+
+drop policy if exists "chat_select_member" on public.chat_messages;
+create policy "chat_select_member"
+  on public.chat_messages for select
+  to authenticated
+  using (true);
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_policies
+    where schemaname = 'public'
+      and tablename = 'chat_messages'
+      and policyname = 'chat_update_own'
+  ) then
+    create policy "chat_update_own"
+      on public.chat_messages for update
+      to authenticated
+      using (user_id = public.current_profile_id())
+      with check (user_id = public.current_profile_id());
+  end if;
+end $$;
+
+create or replace function public.chat_message_soft_delete_guard()
+returns trigger
+language plpgsql
+security invoker
+set search_path = public
+as $$
+begin
+  if new.deleted_at is null then
+    raise exception 'chat: only soft-delete updates are allowed';
+  end if;
+  if old.deleted_at is not null then
+    raise exception 'chat: message was already deleted';
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists chat_messages_soft_delete_guard on public.chat_messages;
+create trigger chat_messages_soft_delete_guard
+  before update on public.chat_messages
+  for each row execute function public.chat_message_soft_delete_guard();

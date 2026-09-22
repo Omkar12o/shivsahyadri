@@ -233,6 +233,66 @@
   }
 }
 
+/* ---- Member app responsive system ---- */
+
+/* Fluid app container: mobile 16px / tablet 24px / desktop 32px gutters,
+   max ~1400px so the member app uses full width on desktop instead of a
+   phone-sized column. */
+.app-container {
+  width: 100%;
+  margin-inline: auto;
+  max-width: 1400px;
+  padding-inline: 16px;
+}
+
+@media (min-width: 768px) {
+  .app-container {
+    padding-inline: 24px;
+  }
+}
+
+@media (min-width: 1280px) {
+  .app-container {
+    padding-inline: 32px;
+  }
+}
+
+/* Prevents horizontal page scroll without breaking position: sticky
+   (overflow: hidden/auto on an ancestor does break it). */
+.no-hscroll {
+  overflow-x: clip;
+}
+
+/* Skeleton shimmer for loading states */
+.skeleton {
+  background: linear-gradient(90deg, #f4f2ef 25%, #e9e7e2 37%, #f4f2ef 63%);
+  background-size: 400% 100%;
+  animation: skeleton-shimmer 1.4s ease infinite;
+}
+
+@keyframes skeleton-shimmer {
+  0% { background-position: 100% 50%; }
+  100% { background-position: 0 50%; }
+}
+
+/* Scoped heading reduction for the member app (admin layout is untouched) */
+.layout-main .page-title {
+  font-size: 1.5rem;
+  line-height: 2rem;
+  margin-bottom: 0.375rem;
+}
+
+.layout-main .page-subtitle {
+  font-size: 0.95rem;
+}
+
+@media (min-width: 768px) {
+  .layout-main .page-title {
+    font-size: 1.75rem;
+    line-height: 2.25rem;
+  }
+}
+
 /* Custom scrollbar for webkit */
 ::-webkit-scrollbar {
   width: 8px;

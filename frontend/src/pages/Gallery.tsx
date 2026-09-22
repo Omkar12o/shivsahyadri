@@ -92,7 +92,7 @@ export default function Gallery() {
         <div className="mt-8"><EmptyState title={`No photos in "${cat === 'all' ? 'All' : cat}" yet`} description="Photos will appear here after upload." /></div>
       ) : (
         <>
-          <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
+          <div className="hidden md:grid md:grid-cols-3 lg:grid-cols-4 gap-4 mt-6">
             {items.map((g, i) => (
               <button
                 key={g.id}
@@ -116,32 +116,33 @@ export default function Gallery() {
             ))}
           </div>
 
-          {/* Mobile: big full-width cards so photos are easy to see */}
-          <div className="md:hidden flex flex-col gap-4 mt-6">
+          {/* Mobile: clean 2-column photo grid so photos are easy to see */}
+          <div className="md:hidden grid grid-cols-2 gap-3 mt-6">
             {items.map((g, i) => (
               <button
                 key={g.id}
                 onClick={() => setViewerIndex(i)}
                 className="card overflow-hidden text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-saffron"
               >
-                <div className="relative">
-                  <img src={g.image_url} alt={g.title} className="h-72 w-full object-cover" loading="lazy" />
-                  <span className="absolute top-2 right-2 bg-black/50 text-white p-2 rounded-full" title="View full size">
-                    <Expand className="h-5 w-5" aria-hidden="true" />
+                <div className="relative aspect-square">
+                  <img src={g.image_url} alt={g.title} className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
+                  <span className="absolute top-2 right-2 bg-black/50 text-white p-1.5 rounded-full" title="View full size">
+                    <Expand className="h-4 w-4" aria-hidden="true" />
                   </span>
                 </div>
-                <div className="p-4 flex items-center justify-between gap-2">
+                <div className="p-2.5 flex items-center justify-between gap-2">
                   <div className="min-w-0">
-                    <p className="font-medium truncate">{g.title}</p>
+                    <p className="text-sm font-medium truncate">{g.title}</p>
                     <p className="text-xs text-gray-500">{g.category}</p>
                   </div>
                   <button
                     onClick={e => { e.stopPropagation(); handleDownload(g) }}
                     disabled={downloading === g.id}
-                    className="btn-outline text-xs px-2.5 py-1.5 shrink-0 disabled:opacity-60"
+                    className="text-saffron shrink-0 disabled:opacity-60"
                     title="Download photo"
+                    aria-label={`Download ${g.title}`}
                   >
-                    {downloading === g.id ? '…' : <Download className="h-4 w-4" />}
+                    {downloading === g.id ? <span className="text-xs">…</span> : <Download className="h-4 w-4" />}
                   </button>
                 </div>
               </button>

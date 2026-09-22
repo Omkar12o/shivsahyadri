@@ -18,6 +18,17 @@ const TABS = [
   { path: '/more', icon: MoreHorizontal },
 ]
 
+const DESKTOP_NAV = [
+  { path: '/home', label: 'Home' },
+  { path: '/aarti', label: 'Aarti' },
+  { path: '/programs', label: 'Programs' },
+  { path: '/gallery', label: 'Gallery' },
+  { path: '/members', label: 'Members' },
+  { path: '/videos', label: 'Videos' },
+  { path: '/donation', label: 'Donation' },
+  { path: '/more', label: 'More' },
+]
+
 export default function Layout() {
   const { profile, signOut } = useAuth()
   const { success: toastSuccess } = useToast()
@@ -64,60 +75,75 @@ export default function Layout() {
   const fullName = profile?.full_name ?? 'Member'
 
   return (
-    <div className="min-h-screen flex flex-col bg-cream overflow-x-hidden">
-      {/* Top app bar */}
+    <div className="min-h-screen flex flex-col bg-cream no-hscroll">
+      {/* Top app bar — compact on mobile, full header + nav on md+ */}
       <header
-        className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur border-b border-orange-100 shadow-sm"
+        className="sticky top-0 z-50 bg-white/95 backdrop-blur border-b border-orange-100 shadow-sm"
         style={{ paddingTop: 'env(safe-area-inset-top)' }}
       >
-        <div className="flex items-center justify-between h-14 px-4">
-          <Link to="/home" className="flex items-center gap-2 min-w-0" aria-label="Go to Home">
-            {logoUrl ? (
-              <img
-                src={logoUrl}
-                alt=""
-                className="w-9 h-9 rounded-xl object-contain bg-white border border-orange-100 p-0.5 shadow-sm shrink-0"
-              />
-            ) : (
-              <div className="w-9 h-9 rounded-xl bg-saffron flex items-center justify-center shrink-0">
-                <span className="text-white font-devanagari font-bold">श्री</span>
-              </div>
-            )}
-            <span className="font-bold text-sm sm:text-base text-gray-900 truncate">{mandalName}</span>
-          </Link>
-
-          <div className="flex items-center gap-1 shrink-0">
-            <Link
-              to="/member/notifications"
-              className="relative p-2 rounded-lg text-gray-700 active:bg-saffron/10"
-              aria-label={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : 'Notifications'}
-            >
-              <Bell className="w-5 h-5" aria-hidden="true" />
-              {unreadCount > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
-                  {unreadCount > 9 ? '9+' : unreadCount}
-                </span>
-              )}
-            </Link>
-            <Link to="/member/profile" className="p-1.5 rounded-lg" aria-label="My Profile">
-              {profile?.profile_photo_url ? (
-                <img
-                  src={profile.profile_photo_url}
-                  alt="Profile"
-                  className="w-8 h-8 rounded-xl object-cover border border-orange-100"
-                />
+        <div className="app-container">
+          <div className="flex items-center justify-between h-14 md:h-16 gap-3">
+            <Link to="/home" className="flex items-center gap-2 min-w-0 shrink-0" aria-label="Go to Home">
+              {logoUrl ? (
+                <img src={logoUrl} alt="Mandal logo" className="w-9 h-9 md:w-11 md:h-11 rounded-xl object-contain bg-white border border-orange-100 p-0.5 shadow-sm shrink-0" />
               ) : (
-                <div className={cn('w-8 h-8 rounded-xl flex items-center justify-center text-white font-bold text-xs', getAvatarColor(fullName))}>
-                  {getInitials(fullName)}
+                <div className="w-9 h-9 md:w-11 md:h-11 rounded-xl bg-saffron flex items-center justify-center shrink-0">
+                  <span className="text-white font-devanagari font-bold">श्री</span>
                 </div>
               )}
+              <span className="hidden sm:block font-bold text-sm md:text-base text-gray-900 truncate">{mandalName}</span>
             </Link>
+
+            {/* Desktop navigation — from tablet up (bottom nav is hidden at the same width) */}
+            <nav className="hidden md:flex items-center gap-1 mx-auto overflow-x-auto scrollbar-hide" aria-label="Primary">
+              {DESKTOP_NAV.map((item) => {
+                const active = item.path === '/home' || item.path === '/more'
+                  ? location.pathname === item.path
+                  : location.pathname === item.path || location.pathname.startsWith(item.path + '/')
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    className={cn(
+                      'px-3 py-2 rounded-xl text-sm font-semibold transition-colors whitespace-nowrap',
+                      active ? 'text-saffron bg-saffron/10' : 'text-gray-600 hover:text-saffron hover:bg-saffron/5',
+                    )}
+                  >
+                    {item.label}
+                  </Link>
+                )
+              })}
+            </nav>
+
+            <div className="flex items-center gap-1 shrink-0 ml-auto md:ml-0">
+              <Link
+                to="/member/notifications"
+                className="relative p-2 rounded-lg text-gray-700 active:bg-saffron/10"
+                aria-label={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : 'Notifications'}
+              >
+                <Bell className="w-5 h-5" aria-hidden="true" />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
+              </Link>
+              <Link to="/member/profile" className="p-1.5 rounded-lg" aria-label="My Profile">
+                {profile?.profile_photo_url ? (
+                  <img src={profile.profile_photo_url} alt="Profile" className="w-8 h-8 md:w-9 md:h-9 rounded-xl object-cover border border-orange-100" />
+                ) : (
+                  <div className={cn('w-8 h-8 md:w-9 md:h-9 rounded-xl flex items-center justify-center text-white font-bold text-xs', getAvatarColor(fullName))}>
+                    {getInitials(fullName)}
+                  </div>
+                )}
+              </Link>
+            </div>
           </div>
         </div>
       </header>
 
       {/* Page content */}
-      <main className="flex-1 pt-[calc(env(safe-area-inset-top)+56px)] pb-[calc(env(safe-area-inset-bottom)+68px)]">
+      <main className="layout-main flex-1 pb-[calc(env(safe-area-inset-bottom)+68px)] md:pb-8">
         <div key={location.pathname} className="animate-page-in">
           <Outlet />
         </div>
@@ -126,13 +152,13 @@ export default function Layout() {
       {/* Scheduled announcement popup */}
       <PopupNotice />
 
-      {/* Bottom nav */}
+      {/* Mobile bottom nav — hidden on md+ (replaced by desktop header nav) */}
       <nav
-        className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-orange-100 shadow-[0_-2px_12px_rgba(0,0,0,0.06)]"
+        className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-orange-100 shadow-[0_-2px_12px_rgba(0,0,0,0.06)] md:hidden"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
         aria-label="Main navigation"
       >
-        <div className="flex items-stretch max-w-md mx-auto">
+        <div className="flex items-stretch">
           {TABS.map((tab) => {
             const Icon = tab.icon
             const active = isTabActive(tab.path)
@@ -145,6 +171,7 @@ export default function Layout() {
                   'flex-1 flex flex-col items-center justify-center gap-0.5 py-2 text-[11px] font-semibold transition-colors select-none',
                   active ? 'text-saffron' : 'text-gray-400 active:text-saffron',
                 )}
+                aria-current={active ? 'page' : undefined}
               >
                 <span className={cn('p-1 rounded-xl transition-colors', active && 'bg-saffron/10')}>
                   <Icon className={cn('w-[22px] h-[22px]', active && 'stroke-[2.2]')} aria-hidden="true" />

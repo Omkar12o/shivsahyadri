@@ -36,7 +36,7 @@ export default function Aarti(){
         {AARTI_CATEGORIES.map(c=> <button key={c.value} onClick={()=>setCat(c.value)} className={`btn ${cat===c.value?'btn-primary':'btn-outline'} text-sm`}>{c.icon} {c.label}</button>)}
       </div>
       {items.length===0 ? <div className="mt-8"><EmptyState title="No Aartis found" description="Admin will publish Aartis soon."/></div> : (
-        <div className="grid md:grid-cols-2 gap-4 mt-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
           {items.map(a=> (
             <Link key={a.id} to={`/aarti/${a.id}`} className="card p-5 hover:shadow-lg transition">
               <div className="flex justify-between"><span className="badge-primary text-xs">{a.category}</span><span className="text-xs text-gray-500">{formatTime(a.time)}</span></div>

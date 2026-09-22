@@ -25,9 +25,9 @@ export default function Programs(){
       <p className="page-subtitle">Ganeshotsav schedule</p>
       {items.length===0 ? <div className="mt-8"><EmptyState title="No programs yet" description="Schedule will be published by Admin."/></div> : (
         <div className="mt-6 space-y-8">
-          <section><h2 className="font-bold text-lg">Today</h2>{todays.length===0?<p className="text-sm text-gray-500 mt-2">No events today.</p>:<div className="grid md:grid-cols-2 gap-4 mt-3">{todays.map(p=> <Card key={p.id} p={p}/>)}</div>}</section>
-          <section><h2 className="font-bold text-lg">Upcoming</h2>{upcoming.length===0?<p className="text-sm text-gray-500 mt-2">All caught up.</p>:<div className="grid md:grid-cols-2 gap-4 mt-3">{upcoming.map(p=> <Card key={p.id} p={p}/>)}</div>}</section>
-          {past.length>0 && <section><h2 className="font-bold text-lg">Completed</h2><div className="grid md:grid-cols-2 gap-4 mt-3 opacity-75">{past.slice(0,4).map(p=> <Card key={p.id} p={p}/>)}</div></section>}
+          <section><h2 className="font-bold text-lg">Today</h2>{todays.length===0?<p className="text-sm text-gray-500 mt-2">No events today.</p>:<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-3">{todays.map(p=> <Card key={p.id} p={p}/>)}</div>}</section>
+          <section><h2 className="font-bold text-lg">Upcoming</h2>{upcoming.length===0?<p className="text-sm text-gray-500 mt-2">All caught up.</p>:<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-3">{upcoming.map(p=> <Card key={p.id} p={p}/>)}</div>}</section>
+          {past.length>0 && <section><h2 className="font-bold text-lg">Completed</h2><div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-3 opacity-75">{past.slice(0,4).map(p=> <Card key={p.id} p={p}/>)}</div></section>}
         </div>
       )}
     </div>

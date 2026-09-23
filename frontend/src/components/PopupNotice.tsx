@@ -33,8 +33,12 @@ export default function PopupNotice() {
         .limit(10)
       if (cancelled || error) return
       const active = (data ?? []).find(a => {
-        if (a.start_date && a.start_date > today) return false
-        if (a.end_date && a.end_date < today) return false
+        // Popup shows only for the day it was posted unless the admin set
+        // explicit start/end dates. So with no dates it never carries over.
+        const start = a.start_date || (a.created_at ? a.created_at.slice(0, 10) : today)
+        const end = a.end_date || (a.created_at ? a.created_at.slice(0, 10) : today)
+        if (start > today) return false
+        if (end < today) return false
         return true
       })
       if (active && !sessionStorage.getItem(`popup-seen-${active.id}`)) {

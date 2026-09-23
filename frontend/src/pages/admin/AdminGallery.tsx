@@ -150,7 +150,10 @@ export default function AdminGallery() {
           <select className="input" value={category} onChange={e => setCategory(e.target.value)}>
             {GALLERY_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
-          <input className="input" type="date" value={eventDate} onChange={e => setEventDate(e.target.value)} />
+          <div>
+            <input className="input" type="date" value={eventDate} onChange={e => setEventDate(e.target.value)} />
+            <p className="text-[11px] text-gray-400 mt-1">Set the event date so Jery / Previous Years photos get their year tab. When uploading Jery, pick the year this photo is from.</p>
+          </div>
         </div>
         {files.length > 0 && !uploading && (
           <p className="text-sm text-gray-600 mt-2">{files.length} file{files.length > 1 ? 's' : ''} selected.</p>

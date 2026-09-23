@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { galleryService } from '@/services/galleryService'
 import { LoadingScreen, EmptyState } from '@/components/ui/feedback'
-import { Download, X, ChevronLeft, ChevronRight, Expand } from 'lucide-react'
+import { Download, X, ChevronLeft, ChevronRight, Expand, Calendar } from 'lucide-react'
 import type { GalleryImage } from '@/types'
-import { GALLERY_CATEGORIES } from '@/types'
+import { GALLERY_CATEGORIES, YEAR_FILTER_CATEGORIES } from '@/types'
 import { cn } from '@/utils'
 
 async function downloadImage(image: GalleryImage) {
@@ -33,6 +33,7 @@ async function downloadImage(image: GalleryImage) {
 export default function Gallery() {
   const [items, setItems] = useState<GalleryImage[]>([])
   const [cat, setCat] = useState('all')
+  const [year, setYear] = useState('all')
   const [loading, setLoading] = useState(true)
   const [downloading, setDownloading] = useState<string | null>(null)
   const [viewerIndex, setViewerIndex] = useState<number | null>(null)
@@ -42,6 +43,25 @@ export default function Gallery() {
   }, [cat])
 
   useEffect(() => { load(cat) }, [cat, load])
+
+  const changeCat = (c: string) => {
+    setCat(c)
+    setYear('all')
+    setViewerIndex(null)
+  }
+
+  const years = useMemo(() => {
+    const set = new Set<string>()
+    items.forEach(g => { if (g.event_date) set.add(String(new Date(g.event_date).getFullYear())) })
+    return [...set].sort((a, b) => Number(b) - Number(a))
+  }, [items])
+
+  const showYearChips = YEAR_FILTER_CATEGORIES.includes(cat) && years.length > 0
+
+  const visible = useMemo(() => {
+    if (year === 'all') return items
+    return items.filter(g => g.event_date && String(new Date(g.event_date).getFullYear()) === year)
+  }, [items, year])
 
   // Live auto-show: realtime subscription - admin upload appears instantly without refresh
   useEffect(() => {
@@ -63,8 +83,8 @@ export default function Gallery() {
     if (viewerIndex === null) return
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setViewerIndex(null)
-      if (e.key === 'ArrowLeft') setViewerIndex(i => (i === null ? i : (i - 1 + items.length) % items.length))
-      if (e.key === 'ArrowRight') setViewerIndex(i => (i === null ? i : (i + 1) % items.length))
+      if (e.key === 'ArrowLeft') setViewerIndex(i => (i === null ? i : (i - 1 + visible.length) % visible.length))
+      if (e.key === 'ArrowRight') setViewerIndex(i => (i === null ? i : (i + 1) % visible.length))
     }
     window.addEventListener('keydown', onKey)
     document.body.style.overflow = 'hidden'
@@ -72,28 +92,37 @@ export default function Gallery() {
       window.removeEventListener('keydown', onKey)
       document.body.style.overflow = ''
     }
-  }, [viewerIndex, items.length])
+  }, [viewerIndex, visible.length])
 
   if (loading) return <LoadingScreen label="Loading gallery..." />
 
-  const active = viewerIndex !== null ? items[viewerIndex] : null
+  const active = viewerIndex !== null ? visible[viewerIndex] : null
 
   return (
     <div className="container-main px-4 py-10">
       <h1 className="page-title">📸 Gallery</h1>
       <p className="page-subtitle">Tap any photo to view it full size.</p>
       <div className="flex flex-wrap gap-2 mt-4">
-        <button onClick={() => setCat('all')} className={`btn text-xs ${cat === 'all' ? 'btn-primary' : 'btn-outline'}`}>All</button>
+        <button onClick={() => changeCat('all')} className={`btn text-xs ${cat === 'all' ? 'btn-primary' : 'btn-outline'}`}>All</button>
         {GALLERY_CATEGORIES.map(c =>
-          <button key={c} onClick={() => setCat(c)} className={`btn text-xs ${cat === c ? 'btn-primary' : 'btn-outline'}`}>{c}</button>
+          <button key={c} onClick={() => changeCat(c)} className={`btn text-xs ${cat === c ? 'btn-primary' : 'btn-outline'}`}>{c}</button>
         )}
       </div>
-      {items.length === 0 ? (
-        <div className="mt-8"><EmptyState title={`No photos in "${cat === 'all' ? 'All' : cat}" yet`} description="Photos will appear here after upload." /></div>
+      {showYearChips && (
+        <div className="flex flex-wrap gap-2 mt-3 items-center">
+          <span className="text-xs text-gray-500 flex items-center gap-1"><Calendar className="w-3.5 h-3.5" aria-hidden="true" /> Year:</span>
+          <button onClick={() => setYear('all')} className={`btn text-xs ${year === 'all' ? 'btn-primary' : 'btn-outline'}`}>All</button>
+          {years.map(y =>
+            <button key={y} onClick={() => setYear(y)} className={`btn text-xs ${year === y ? 'btn-primary' : 'btn-outline'}`}>{y}</button>
+          )}
+        </div>
+      )}
+      {visible.length === 0 ? (
+        <div className="mt-8"><EmptyState title={`No photos in "${cat === 'all' ? 'All' : cat}${year !== 'all' ? ` ${year}` : ''}" yet`} description="Photos will appear here after upload." /></div>
       ) : (
         <>
           <div className="hidden md:grid md:grid-cols-3 lg:grid-cols-4 gap-4 mt-6">
-            {items.map((g, i) => (
+            {visible.map((g, i) => (
               <button
                 key={g.id}
                 onClick={() => setViewerIndex(i)}
@@ -118,7 +147,7 @@ export default function Gallery() {
 
           {/* Mobile: clean 2-column photo grid so photos are easy to see */}
           <div className="md:hidden grid grid-cols-2 gap-3 mt-6">
-            {items.map((g, i) => (
+            {visible.map((g, i) => (
               <button
                 key={g.id}
                 onClick={() => setViewerIndex(i)}
@@ -175,7 +204,7 @@ export default function Gallery() {
           {/* Image area */}
           <div className="flex-1 min-h-0 relative flex items-stretch px-2 pb-2" onClick={e => e.stopPropagation()}>
             <button
-              onClick={() => setViewerIndex((viewerIndex - 1 + items.length) % items.length)}
+              onClick={() => setViewerIndex((viewerIndex - 1 + visible.length) % visible.length)}
               className="absolute left-1 md:left-4 top-1/2 -translate-y-1/2 z-10 p-2 md:p-3 rounded-full bg-black/40 hover:bg-black/70 text-white transition-colors"
               aria-label="Previous photo"
             >
@@ -189,7 +218,7 @@ export default function Gallery() {
               />
             </div>
             <button
-              onClick={() => setViewerIndex((viewerIndex + 1) % items.length)}
+              onClick={() => setViewerIndex((viewerIndex + 1) % visible.length)}
               className="absolute right-1 md:right-4 top-1/2 -translate-y-1/2 z-10 p-2 md:p-3 rounded-full bg-black/40 hover:bg-black/70 text-white transition-colors"
               aria-label="Next photo"
             >
@@ -199,7 +228,7 @@ export default function Gallery() {
 
           {/* Bottom bar */}
           <div className="px-4 py-3 flex items-center justify-between text-white shrink-0" onClick={e => e.stopPropagation()}>
-            <p className="text-xs text-white/70">{(viewerIndex + 1)} / {items.length}</p>
+            <p className="text-xs text-white/70">{(viewerIndex + 1)} / {visible.length}</p>
             <button
               onClick={() => handleDownload(active)}
               disabled={downloading === active.id}

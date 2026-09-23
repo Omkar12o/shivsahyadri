@@ -26,6 +26,11 @@ const emptyForm: AnnouncementForm = {
   start_date: '', end_date: '', is_published: true, image_url: '', image_public_id: null,
 }
 
+function todayStr(): string {
+  const d = new Date()
+  return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10)
+}
+
 export default function AdminAnnouncements() {
   const [items, setItems] = useState<Announcement[]>([])
   const [form, setForm] = useState<AnnouncementForm>(emptyForm)
@@ -156,9 +161,15 @@ export default function AdminAnnouncements() {
             <label className="label">End Date</label>
             <input className="input" type="date" value={form.end_date} onChange={e => setForm({ ...form, end_date: e.target.value })} />
           </div>
+          <p className="text-[11px] text-gray-400 md:col-span-2">Leave dates empty for a <b>same-day-only</b> notice, or set a range to keep it visible longer.</p>
         </div>
         <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" checked={form.popup_enabled} onChange={e => setForm({ ...form, popup_enabled: e.target.checked })} /> Show as pop-up notice
+          <input type="checkbox" checked={form.popup_enabled} onChange={e => {
+            const on = e.target.checked
+            setForm(f => on && !f.start_date && !f.end_date
+              ? { ...f, popup_enabled: on, start_date: todayStr(), end_date: todayStr() }
+              : { ...f, popup_enabled: on })
+          }} /> Show as pop-up notice
         </label>
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" checked={form.is_published} onChange={e => setForm({ ...form, is_published: e.target.checked })} /> Published (visible to public)

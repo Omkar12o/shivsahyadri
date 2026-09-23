@@ -440,8 +440,11 @@ export const GALLERY_CATEGORIES = [
   'Programs',
   'Mahaprasad',
   'Visarjan',
+  'Jery',
   'Previous Years',
 ] as const
+
+export const YEAR_FILTER_CATEGORIES: readonly string[] = ['Jery', 'Previous Years']
 
 export function isAdminRole(role: UserRole | 'super_admin' | null | undefined): boolean {
   return role === 'admin' || role === 'super_admin'

@@ -256,7 +256,10 @@ export default function AdminLayout() {
               <Link
                 to="/admin/notifications"
                 onClick={() => setProfileMenuOpen(false)}
-                className="relative p-2 rounded-xl text-gray-600 hover:bg-gray-100 transition-colors"
+                className={cn(
+                  'relative p-2 rounded-xl transition-colors',
+                  unreadCount > 0 ? 'bg-saffron/10 text-saffron ring-2 ring-saffron/60 ring-offset-1 ring-offset-white' : 'text-gray-600 hover:bg-gray-100',
+                )}
                 aria-label="Notifications"
               >
                 <Bell className="w-5 h-5" aria-hidden="true" />

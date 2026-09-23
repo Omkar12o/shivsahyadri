@@ -1,15 +1,36 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
+import { useToast } from '@/components/ToastProvider'
 import { formatBirthday } from '@/utils'
-import { Camera, Save } from 'lucide-react'
+import { Camera, Save, Loader2 } from 'lucide-react'
 
 export default function Profile() {
   const { profile, updateProfile, changePassword, uploadProfilePhoto } = useAuth()
+  const { success: toastSuccess, error: toastError } = useToast()
   const [form, setForm] = useState({ full_name: profile?.full_name ?? '', village: profile?.village ?? '', address: profile?.address ?? '', mobile: profile?.mobile ?? '', date_of_birth: profile?.date_of_birth ?? '', birthday_visibility: profile?.birthday_visibility ?? true })
   const [msg, setMsg] = useState<string | null>(null)
   const [pw, setPw] = useState('')
+  const [uploading, setUploading] = useState(false)
+  const photoInputRef = useRef<HTMLInputElement>(null)
+
   if (!profile) return <div className="container-main px-4 py-10">Not logged in</div>
   const today = new Date().toISOString().split('T')[0]
+
+  const handlePhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0]
+    e.target.value = ''
+    if (!f) return
+    setUploading(true)
+    try {
+      await uploadProfilePhoto(f)
+      toastSuccess('✓ Profile photo updated')
+    } catch (err) {
+      toastError('✕ ' + (err instanceof Error ? err.message : 'Photo upload failed'))
+    } finally {
+      setUploading(false)
+    }
+  }
+
   return (
     <div className="app-container py-6 md:py-8 lg:py-10 max-w-3xl">
       <h1 className="page-title">My Profile</h1>
@@ -17,24 +38,31 @@ export default function Profile() {
 
       <div className="card p-5 md:p-6 mt-5 space-y-5">
         <div className="flex items-center gap-4">
-          {profile.profile_photo_url ? (
-            <img src={profile.profile_photo_url} alt="" className="w-20 h-20 rounded-2xl object-cover border border-orange-100" />
-          ) : (
-            <div className="w-20 h-20 rounded-2xl bg-saffron text-white flex items-center justify-center font-bold">{profile.full_name.slice(0, 2).toUpperCase()}</div>
-          )}
-          <label className="btn-outline text-sm cursor-pointer">
-            <Camera className="w-4 h-4 mr-1.5" aria-hidden="true" /> Upload Photo
-            <input type="file" hidden accept="image/*" onChange={async (e) => {
-              const f = e.target.files?.[0]
-              if (!f) return
-              try {
-                await uploadProfilePhoto(f)
-                setMsg('Photo updated')
-              } catch (err: any) {
-                setMsg(err.message)
-              }
-            }} />
+          <label className="relative cursor-pointer group shrink-0" title="Change photo">
+            {profile.profile_photo_url ? (
+              <img src={profile.profile_photo_url} alt="" className="w-20 h-20 rounded-2xl object-cover border border-orange-100 group-hover:opacity-90 transition" />
+            ) : (
+              <div className="w-20 h-20 rounded-2xl bg-saffron text-white flex items-center justify-center font-bold text-xl">{profile.full_name.slice(0, 2).toUpperCase()}</div>
+            )}
+            <span className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-saffron text-white flex items-center justify-center border-2 border-white shadow-sm">
+              <Camera className="w-4 h-4" aria-hidden="true" />
+            </span>
+            <input ref={photoInputRef} type="file" hidden accept="image/*" onChange={handlePhoto} />
           </label>
+          <div className="min-w-0">
+            <button type="button" className="btn-outline text-sm" onClick={() => photoInputRef.current?.click()} disabled={uploading}>
+              {uploading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-1.5 animate-spin" aria-hidden="true" /> Uploading…
+                </>
+              ) : (
+                <>
+                  <Camera className="w-4 h-4 mr-1.5" aria-hidden="true" /> Change Photo
+                </>
+              )}
+            </button>
+            <p className="text-xs text-gray-400 mt-1.5">Tap the photo or button — uploads instantly, no save needed</p>
+          </div>
         </div>
 
         <div className="grid md:grid-cols-2 gap-4">

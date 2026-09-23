@@ -134,7 +134,12 @@ export default function Layout() {
               </Link>
               <Link
                 to="/member/notifications"
-                className="relative p-2 rounded-lg text-gray-700 active:bg-saffron/10"
+                className={cn(
+                  'relative p-2 rounded-lg transition-all',
+                  unreadCount > 0
+                    ? 'bg-saffron/10 text-saffron ring-2 ring-saffron/60 ring-offset-1 ring-offset-white'
+                    : 'text-gray-700 active:bg-saffron/10',
+                )}
                 aria-label={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : 'Notifications'}
               >
                 <Bell className="w-5 h-5" aria-hidden="true" />

@@ -5,7 +5,14 @@ import { AARTI_BOOK, AARTI_BOOK_TITLE, AARTI_BOOK_SUBTITLE } from '@/data/aartiB
 export default function AartiBook() {
   const [q, setQ] = useState('')
   const refs = useRef<Record<string, HTMLDivElement | null>>({})
-  const filtered = AARTI_BOOK.filter(a => !q || a.title.includes(q) || a.lyrics.includes(q))
+  const ql = q.trim().toLowerCase()
+  const filtered = AARTI_BOOK.filter(a =>
+    !ql ||
+    a.title.toLowerCase().includes(ql) ||
+    (a.subtitle ?? '').toLowerCase().includes(ql) ||
+    a.lyrics.toLowerCase().includes(ql),
+  )
+  const clearSearch = () => setQ('')
 
   const shareBook = async () => {
     const text = `${AARTI_BOOK_TITLE}\n${AARTI_BOOK_SUBTITLE}\n\n॥ गणपती बाप्पा मोरया ॥\n\n` + AARTI_BOOK.map(a => `*${a.title}*\n${a.lyrics.slice(0, 200)}...`).join('\n\n---\n\n')
@@ -43,8 +50,8 @@ export default function AartiBook() {
       </div>
 
       <div className="container-main px-4 py-6">
-        {/* Search + Index */}
-        <div className="card p-4 sticky top-[7.5rem] z-10 bg-white/95 backdrop-blur">
+        {/* Search + Index — rendered ONCE at the top, above all Aarti pages */}
+        <div className="card p-4">
           <input
             placeholder="शोधा... उदा. गणपती, देवी, विठ्ठल"
             value={q}
@@ -62,10 +69,26 @@ export default function AartiBook() {
               </button>
             ))}
           </div>
-          <p className="text-xs text-gray-500 mt-2">आरत्या — अनुक्रमणिका ({filtered.length}/{AARTI_BOOK.length})</p>
+          <div className="mt-2 flex items-center justify-between gap-2">
+            <p className="text-xs text-gray-500">आरत्या — अनुक्रमणिका ({filtered.length}/{AARTI_BOOK.length})</p>
+            {q.trim() && (
+              <button onClick={clearSearch} className="text-xs font-semibold text-saffron hover:underline">
+                ✕ Clear Search
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Book Pages */}
+        {filtered.length === 0 ? (
+          <div className="card p-8 mt-6 text-center">
+            <p className="text-2xl">🙏</p>
+            <p className="font-devanagari text-lg mt-2">कोणतीही आरती सापडली नाही</p>
+            <p className="text-sm text-gray-500 mt-1">"{q}" साठी काहीही आढळले नाही.</p>
+            <button onClick={clearSearch} className="btn-primary mt-4">Clear Search</button>
+          </div>
+        ) : (
+        <>
         <div className="mt-6 space-y-6">
           {filtered.map((a, idx) => (
             <div
@@ -102,6 +125,8 @@ export default function AartiBook() {
           <p className="mt-4 text-sm text-gray-600">हे आरती पुस्तक सर्व मोबाईल धारकांसाठी आहे — कृपया सर्वांना पाठवावे.</p>
           <button onClick={shareBook} className="btn-primary mt-4">📤 सर्वांना पाठवा — Share Book</button>
         </div>
+        </>
+        )}
       </div>
     </div>
   )

@@ -1,7 +1,6 @@
-import { supabase } from '@/lib/supabase'
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
-import { useState, useEffect } from 'react'
-import { Bell, Home, Music, Calendar, Images, MoreHorizontal, Megaphone } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { Bell, Home, Music, Calendar, Images, MoreHorizontal, Megaphone, MessageCircle, Volume2, VolumeX } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useNotifications } from '@/contexts/NotificationContext'
 import { useChatUnread } from '@/contexts/ChatUnreadContext'
@@ -10,6 +9,9 @@ import { useToast } from '@/components/ToastProvider'
 import PopupNotice from '@/components/PopupNotice'
 import { settingsService } from '@/services/settingsService'
 import { cn, getInitials, getAvatarColor } from '@/utils'
+import { isNotificationSoundEnabled, setNotificationSoundEnabled, playNotificationSound } from '@/utils/sound'
+import { supabase } from '@/lib/supabase'
+import type { RealtimeChannel } from '@supabase/supabase-js'
 
 const TABS = [
   { path: '/home', icon: Home },
@@ -34,13 +36,15 @@ const DESKTOP_NAV = [
 export default function Layout() {
   const { profile, signOut } = useAuth()
   const { success: toastSuccess } = useToast()
-  const { unreadCount } = useNotifications()
+  const { notifications, unreadCount } = useNotifications()
   const { chatUnread } = useChatUnread()
   const { t } = useLanguage()
   const location = useLocation()
   const nav = useNavigate()
   const [logoUrl, setLogoUrl] = useState<string | null>('/logo.jpeg')
   const [mandalName, setMandalName] = useState('Shivsaydri Ganesh Mandal')
+  const [soundOn, setSoundOn] = useState(() => isNotificationSoundEnabled())
+  const lastNotifId = useRef<string | null>(null)
 
   useEffect(() => {
     settingsService.getSiteSettings().then(s => setLogoUrl(s?.logo_url ?? '/logo.jpeg')).catch(() => {})
@@ -59,6 +63,42 @@ export default function Layout() {
     }).subscribe()
     return () => { supabase.removeChannel(channel) }
   }, [])
+
+  const announcementUnread = notifications.filter(n => n.type === 'announcement' && !n.is_read).length
+
+  // Real-time: new community chat message → toast + sound (like WhatsApp badge)
+  useEffect(() => {
+    let channel: RealtimeChannel | null = null
+    const onChat = () => {
+      if (location.pathname === '/member/chat') return
+      toastSuccess('💬 New Community message')
+      playNotificationSound()
+    }
+    supabase.auth.getSession().then(({ data }) => {
+      if (!data?.session) return
+      channel = supabase.channel('layout-chat-alert')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages' }, () => onChat())
+        .subscribe()
+    })
+    return () => {
+      if (channel) supabase.removeChannel(channel)
+    }
+  }, [location.pathname, toastSuccess])
+
+  // Real-time: new notification → toast + sound, badge handled by NotificationContext
+  useEffect(() => {
+    const newest = notifications[0]
+    if (!newest || newest.is_read || newest.id === lastNotifId.current) return
+    lastNotifId.current = newest.id
+    toastSuccess(`${newest.type === 'announcement' ? '📢' : '🔔'} ${newest.title}${newest.message ? ` — ${newest.message}` : ''}`)
+    playNotificationSound()
+  }, [notifications, toastSuccess])
+
+  const toggleSound = () => {
+    const next = !soundOn
+    setSoundOn(next)
+    setNotificationSoundEnabled(next)
+  }
 
   const isTabActive = (path: string) =>
     path === '/home' || path === '/more'
@@ -123,14 +163,31 @@ export default function Layout() {
               })}
             </nav>
 
-            <div className="flex items-center gap-1 shrink-0 ml-auto md:ml-0">
+            <div className="flex items-center gap-0.5 md:gap-1 shrink-0 ml-auto md:ml-0">
+              <button
+                type="button"
+                onClick={toggleSound}
+                className={cn('p-2 rounded-lg transition-colors', soundOn ? 'text-saffron' : 'text-gray-400')}
+                aria-label={soundOn ? 'Notification sound ON - tap to mute' : 'Notification sound OFF - tap to enable'}
+                title={soundOn ? '🔊 Sound ON' : '🔇 Sound OFF'}
+              >
+                {soundOn ? <Volume2 className="w-5 h-5" aria-hidden="true" /> : <VolumeX className="w-5 h-5" aria-hidden="true" />}
+              </button>
               <Link
                 to="/member/notifications?type=announcement"
-                className="p-2 rounded-lg text-gray-700 active:bg-saffron/10"
-                aria-label="Announcements"
+                className={cn(
+                  'relative p-2 rounded-lg transition-all',
+                  announcementUnread > 0 ? 'text-saffron bg-saffron/10 ring-2 ring-saffron/60 ring-offset-1 ring-offset-white' : 'text-gray-700 active:bg-saffron/10',
+                )}
+                aria-label={announcementUnread > 0 ? `Announcements, ${announcementUnread} unread` : 'Announcements'}
                 title="Announcements"
               >
                 <Megaphone className="w-5 h-5" aria-hidden="true" />
+                {announcementUnread > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                    {announcementUnread > 9 ? '9+' : announcementUnread}
+                  </span>
+                )}
               </Link>
               <Link
                 to="/member/notifications"
@@ -146,6 +203,19 @@ export default function Layout() {
                 {unreadCount > 0 && (
                   <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
                     {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
+              </Link>
+              <Link
+                to="/member/chat"
+                className="relative p-2 rounded-lg text-green-600 bg-green-500/10 hover:bg-green-500/15 transition-all"
+                aria-label={chatUnread > 0 ? `Community chat, ${chatUnread} unread` : 'Community chat'}
+                title="Community Chat"
+              >
+                <MessageCircle className="w-5 h-5" aria-hidden="true" />
+                {chatUnread > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 bg-green-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                    {chatUnread > 9 ? '9+' : chatUnread}
                   </span>
                 )}
               </Link>

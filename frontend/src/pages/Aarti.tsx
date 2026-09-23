@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { BookOpen, ChevronRight, Clock, Play } from 'lucide-react'
+import { BookOpen, ChevronRight, Clock, Play, Search, X } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { aartiService } from '@/services/aartiService'
 import { EmptyState } from '@/components/ui/feedback'
@@ -14,6 +14,7 @@ const catLabel = (cat: AartiCategory) => AARTI_CATEGORY_LABELS[cat] ?? cat
 export default function Aarti() {
   const [items, setItems] = useState<Aarti[]>([])
   const [cat, setCat] = useState<AartiCategory | 'all'>('all')
+  const [q, setQ] = useState('')
   const [loading, setLoading] = useState(true)
 
   const load = useCallback(() => { aartiService.list({ category: cat }).then(setItems).finally(() => setLoading(false)) }, [cat])
@@ -24,10 +25,20 @@ export default function Aarti() {
     return () => { supabase.removeChannel(ch) }
   }, [cat, load])
 
+  const visible = useMemo(() => {
+    const ql = q.trim().toLowerCase()
+    if (!ql) return items
+    return items.filter(a =>
+      a.title.toLowerCase().includes(ql) ||
+      catLabel(a.category).toLowerCase().includes(ql) ||
+      a.lyrics.toLowerCase().includes(ql),
+    )
+  }, [items, q])
+
   if (loading) return <AartiSkeleton />
 
   return (
-    <div className="app-container py-4 md:py-6 lg:py-8 pb-10">
+    <div className="app-container py-4 md:py-6 lg:py-8 pb-16">
       {/* Header */}
       <section className="flex items-start justify-between gap-3 flex-wrap">
         <div>
@@ -35,7 +46,7 @@ export default function Aarti() {
           <h1 className="page-title">Aarti Library</h1>
           <p className="page-subtitle">Marathi lyrics, audio, and timings</p>
         </div>
-        <span className="badge-primary mt-1 shrink-0">{items.length} Aartis</span>
+        <span className="badge-primary mt-1 shrink-0">{visible.length} Aartis</span>
       </section>
 
       {/* Aarti Book promo — सर्व मोबाईल धारकांसाठी */}
@@ -54,6 +65,27 @@ export default function Aarti() {
           </span>
         </div>
       </Link>
+
+      {/* SEARCH — rendered once, ONCE, before the filter (never inside the card loop) */}
+      <div className="relative mt-4 md:mt-5">
+        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" aria-hidden="true" />
+        <input
+          value={q}
+          onChange={e => setQ(e.target.value)}
+          placeholder="शोधा... उदा. गणपती, देवी, विठ्ठल"
+          className="input pl-10 pr-9 w-full"
+        />
+        {q.trim() && (
+          <button
+            type="button"
+            onClick={() => setQ('')}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1"
+            aria-label="Clear search"
+          >
+            <X className="w-4 h-4" aria-hidden="true" />
+          </button>
+        )}
+      </div>
 
       {/* Category filter — compact pills, edge-to-edge scroll on mobile */}
       <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1 -mx-4 px-4 md:mx-0 md:px-0 mt-4 md:mt-5">
@@ -83,13 +115,21 @@ export default function Aarti() {
       </div>
 
       {/* Aarti grid */}
-      {items.length === 0 ? (
+      {visible.length === 0 ? (
         <div className="mt-6">
-          <EmptyState title="No Aartis here yet" description={cat === 'all' ? 'Admin will publish Aartis soon.' : `No ${catLabel(cat)} aartis yet.`} />
+          <EmptyState
+            title={q.trim() ? '🙏 कोणतीही आरती सापडली नाही' : 'No Aartis here yet'}
+            description={q.trim() ? '"' + q + '" साठी काहीही आढळले नाही.' : cat === 'all' ? 'Admin will publish Aartis soon.' : `No ${catLabel(cat)} aartis yet.`}
+          />
+          {q.trim() && (
+            <div className="text-center mt-4">
+              <button onClick={() => setQ('')} className="btn-outline text-sm">Clear Search</button>
+            </div>
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mt-4 md:mt-5">
-          {items.map(a => (
+          {visible.map(a => (
             <Link key={a.id} to={`/aarti/${a.id}`} className="card group p-4 md:p-5 flex flex-col gap-3 hover:shadow-lg transition active:scale-[0.99]">
               <div className="flex items-center gap-3">
                 <span className="w-11 h-11 rounded-xl bg-saffron/10 flex items-center justify-center text-xl shrink-0">

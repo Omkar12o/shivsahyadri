@@ -1,8 +1,9 @@
 import { useRef, useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/components/ToastProvider'
-import { formatBirthday } from '@/utils'
-import { Camera, Save, Loader2 } from 'lucide-react'
+import { formatBirthday, cn } from '@/utils'
+import { Camera, Save, Loader2, Volume2 } from 'lucide-react'
+import { isNotificationSoundEnabled, setNotificationSoundEnabled, playNotificationSound } from '@/utils/sound'
 
 export default function Profile() {
   const { profile, updateProfile, changePassword, uploadProfilePhoto } = useAuth()
@@ -11,6 +12,7 @@ export default function Profile() {
   const [msg, setMsg] = useState<string | null>(null)
   const [pw, setPw] = useState('')
   const [uploading, setUploading] = useState(false)
+  const [soundOn, setSoundOn] = useState(() => isNotificationSoundEnabled())
   const photoInputRef = useRef<HTMLInputElement>(null)
 
   if (!profile) return <div className="container-main px-4 py-10">Not logged in</div>
@@ -99,6 +101,26 @@ export default function Profile() {
             setMsg(r.error ?? '✓ Password updated')
           }}>Update</button>
         </div>
+      </div>
+
+      <div className="card p-5 md:p-6 mt-5">
+        <h3 className="font-bold flex items-center gap-2"><Volume2 className="w-4 h-4 text-saffron" aria-hidden="true" /> settings</h3>
+        <label className="flex items-center justify-between gap-3 mt-3">
+          <span className="text-sm"><b>Notification Sound</b><span className="block text-xs text-gray-400">🔔 Plays a short ding when new announcements, notifications, or chat messages arrive.</span></span>
+          <button
+            type="button"
+            onClick={() => {
+              const next = !soundOn
+              setSoundOn(next)
+              setNotificationSoundEnabled(next)
+              if (next) playNotificationSound()
+            }}
+            className={cn('relative w-12 h-7 rounded-full transition-colors flex items-center px-1', soundOn ? 'bg-saffron justify-end' : 'bg-gray-300 justify-start')}
+            aria-label={soundOn ? 'Turn off notification sound' : 'Turn on notification sound'}
+          >
+            <span className="w-5 h-5 bg-white rounded-full shadow" />
+          </button>
+        </label>
       </div>
     </div>
   )

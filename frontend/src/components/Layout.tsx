@@ -125,7 +125,7 @@ export default function Layout() {
         style={{ paddingTop: 'env(safe-area-inset-top)' }}
       >
         <div className="app-container">
-          <div className="flex items-center justify-between h-14 md:h-16 gap-3">
+          <div className="flex items-center justify-between h-14 md:h-16 lg:h-[72px] gap-3">
             <Link to="/home" className="flex items-center gap-2 min-w-0 shrink-0" aria-label="Go to Home">
               {logoUrl ? (
                 <img src={logoUrl} alt="Mandal logo" className="w-9 h-9 md:w-11 md:h-11 rounded-xl object-contain bg-white border border-orange-100 p-0.5 shadow-sm shrink-0" />

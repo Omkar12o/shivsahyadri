@@ -11,22 +11,26 @@ import {
   Sparkles,
   Handshake,
   Rocket,
-  Users,
+  Calendar,
+  MapPin,
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import { aartiService } from '@/services/aartiService'
 import { announcementService } from '@/services/announcementService'
+import { programService } from '@/services/programService'
 import { galleryService } from '@/services/galleryService'
 import { settingsService } from '@/services/settingsService'
 import { profileService } from '@/services/profileService'
 import { QuickActionIcon } from '@/components/ui/display'
 import { formatTime, getAvatarColor, getInitials } from '@/utils'
 import { useLanguage } from '@/contexts/LanguageContext'
+import DesktopHome from '@/components/DesktopHome'
 import type {
   Aarti,
   Announcement,
   GalleryImage,
+  Program,
   SiteSettings,
   DonationInfo,
   MandalInfo,
@@ -45,6 +49,7 @@ export default function Home() {
   const { profile } = useAuth()
   const { t } = useLanguage()
   const [aartis, setAartis] = useState<Aarti[]>([])
+  const [programs, setPrograms] = useState<Program[]>([])
   const [announcements, setAnnouncements] = useState<Announcement[]>([])
   const [gallery, setGallery] = useState<GalleryImage[]>([])
   const [members, setMembers] = useState<MemberDirectoryEntry[]>([])
@@ -59,9 +64,10 @@ export default function Home() {
   const load = useCallback(async () => {
     try {
       setLoadError(false)
-      const [a, an, g, mList, s, d, m] = await Promise.all([
+      const [a, an, p, g, mList, s, d, m] = await Promise.all([
         aartiService.listToday().catch(() => []),
         announcementService.list({ limit: 3 }).catch(() => []),
+        programService.listToday().catch(() => []),
         galleryService.list({ limit: 8 }).catch(() => []),
         profileService.getMemberDirectory().catch(() => []),
         settingsService.getSiteSettings().catch(() => null),
@@ -71,6 +77,7 @@ export default function Home() {
       if (!aliveRef.current) return
       setAartis(a)
       setAnnouncements(an)
+      setPrograms(p)
       setGallery(g)
       setMembers(mList)
       setSite(s)
@@ -85,9 +92,11 @@ export default function Home() {
 
   useEffect(() => {
     aliveRef.current = true
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     load()
     const ch = supabase.channel('home-live')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'aartis' }, load)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'programs' }, load)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'announcements' }, load)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, load)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'site_settings' }, load)
@@ -133,7 +142,9 @@ export default function Home() {
   }
 
   return (
-    <div className="app-container py-4 md:py-6 lg:py-8 pb-10">
+    <>
+      {/* Mobile / tablet — original member app view (unchanged) */}
+      <div className="app-container py-4 md:py-6 pb-10 lg:hidden">
       {/* Greeting */}
       <section className="flex items-end justify-between gap-3 flex-wrap">
         <div>
@@ -143,25 +154,27 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Hero / Ganpati image — full-width, big, dynamic from site_settings.ganpati_image_url */}
+      {/* Hero / Ganpati image — mobile keeps the full-bleed card; desktop becomes a balanced 42/58 two-column hero */}
       <section className="pt-4 md:pt-6">
         <div
-          className="relative rounded-2xl md:rounded-3xl overflow-hidden bg-gradient-to-br from-saffron via-orange-600 to-red-600 shadow-lg shadow-saffron/20 flex items-end h-[340px] sm:h-[380px] md:h-[420px] lg:h-[460px]"
+          className="relative rounded-2xl md:rounded-3xl overflow-hidden bg-gradient-to-br from-saffron via-orange-600 to-red-600 shadow-lg shadow-saffron/20 flex items-end h-[340px] sm:h-[380px] md:h-[420px] lg:h-auto lg:min-h-[440px] lg:grid lg:grid-cols-[42%_58%] lg:mx-auto"
         >
           {heroImage ? (
             <img
               src={heroImage}
               alt="Ganpati Bappa Morya"
-              className="absolute inset-0 w-full h-full object-cover object-center"
+              className="absolute inset-0 w-full h-full object-cover object-center lg:static lg:col-start-2 lg:row-start-1 lg:block"
               loading="eager"
             />
           ) : (
-            <span className="absolute inset-0 flex items-center justify-center font-devanagari text-white text-6xl md:text-7xl drop-shadow bg-gradient-to-br from-saffron via-orange-600 to-red-600" aria-hidden="true">
+            <span className="absolute inset-0 flex items-center justify-center font-devanagari text-white text-6xl md:text-7xl drop-shadow bg-gradient-to-br from-saffron via-orange-600 to-red-600 lg:static lg:col-start-2 lg:row-start-1" aria-hidden="true">
               श्री
             </span>
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-transparent pointer-events-none" aria-hidden="true" />
-          <div className="relative z-10 w-full flex flex-col items-start justify-end px-4 md:px-7 pb-4 md:pb-6">
+          <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-transparent pointer-events-none lg:hidden" aria-hidden="true" />
+
+          {/* Mobile / tablet overlay content (unchanged) */}
+          <div className="relative z-10 w-full flex flex-col items-start justify-end px-4 md:px-7 pb-4 md:pb-6 lg:hidden">
             <p className="font-devanagari font-extrabold text-white text-2xl md:text-4xl leading-tight drop-shadow-md">{heroText}</p>
             <p className="font-devanagari text-white/95 text-sm md:text-lg mt-1 drop-shadow">॥ श्री गणेशाय नमः ॥</p>
             <p className="text-[13px] md:text-base text-white/90 mt-0.5 drop-shadow">Shivsaydri Ganesh Mandal{mandalVillage}</p>
@@ -172,6 +185,34 @@ export default function Home() {
               <span className="text-base md:text-lg" aria-hidden="true">🙏</span> View Aarti
             </Link>
           </div>
+
+          {/* Desktop left column — greeting, name, village, date, actions (≥1024px only) */}
+          <div className="hidden lg:flex flex-col justify-center px-10 xl:px-14 py-12 relative z-10 lg:col-start-1 lg:row-start-1">
+            <p className="font-devanagari text-saffron-50/95 text-sm md:text-base font-semibold tracking-wide drop-shadow">॥ श्री गणेशाय नमः ॥</p>
+            <h1 className="mt-3 font-devanagari font-extrabold text-white leading-[1.08] drop-shadow-md text-[clamp(2rem,3.2vw,3.5rem)]">
+              {heroText}
+            </h1>
+            <p className="mt-4 font-bold text-white text-xl lg:text-2xl drop-shadow">{mandalName}</p>
+            <p className="mt-1 text-white/85 text-sm md:text-base drop-shadow">
+              {mandal?.village ?? 'Maharashtra'}
+            </p>
+            <p className="mt-2 text-white/80 text-sm md:text-base drop-shadow">{todayStr}</p>
+
+            <div className="mt-7 flex flex-wrap items-center gap-3">
+              <Link
+                to="/aarti"
+                className="inline-flex items-center gap-2 bg-white text-saffron text-sm font-bold px-6 py-3 rounded-full shadow-md transition-transform hover:scale-[1.02] active:scale-95"
+              >
+                <Music className="w-4 h-4" aria-hidden="true" /> View Aarti
+              </Link>
+              <Link
+                to="/programs"
+                className="inline-flex items-center gap-2 bg-white/15 text-white border border-white/30 backdrop-blur text-sm font-bold px-6 py-3 rounded-full transition-colors hover:bg-white/25 active:scale-95"
+              >
+                <Calendar className="w-4 h-4" aria-hidden="true" /> View Programs
+              </Link>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -180,7 +221,7 @@ export default function Home() {
         <h2 className="text-sm md:text-base font-bold text-gray-900 flex items-center gap-1.5">
           <Sparkles className="w-4 h-4 text-saffron" aria-hidden="true" /> Quick Access
         </h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mt-3">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mt-3">
           {quickActions.map((qa) => (
             <Link
               key={qa.destination + qa.label}
@@ -194,6 +235,45 @@ export default function Home() {
             </Link>
           ))}
         </div>
+      </section>
+
+      {/* Today's Program — real Supabase data, desktop-only section */}
+      <section className="hidden lg:block pt-10">
+        <h2 className="text-base font-bold text-gray-900 flex items-center gap-1.5">
+          <Calendar className="w-4 h-4 text-saffron" aria-hidden="true" /> Today's Program
+        </h2>
+        {programs.length ? (
+          <div className="mt-3 grid md:grid-cols-2 xl:grid-cols-3 gap-3">
+            {programs.slice(0, 6).map((program) => (
+              <Link key={program.id} to="/programs" className="card p-4 flex items-center gap-3 hover:shadow-lg transition active:scale-[0.98]">
+                <span className="w-11 h-11 rounded-xl bg-saffron/10 text-saffron flex items-center justify-center shrink-0">
+                  <Calendar className="w-5 h-5" aria-hidden="true" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="font-semibold text-gray-900 truncate">{program.title}</p>
+                  <p className="text-xs text-gray-500 flex items-center gap-1.5 mt-0.5 flex-wrap">
+                    <span className="inline-flex items-center gap-1">
+                      <Clock className="w-3 h-3" aria-hidden="true" />
+                      {formatTime(program.start_time)}
+                      {program.end_time ? ` – ${formatTime(program.end_time)}` : ''}
+                    </span>
+                    {program.location && (
+                      <span className="inline-flex items-center gap-1">
+                        <MapPin className="w-3 h-3" aria-hidden="true" /> {program.location}
+                      </span>
+                    )}
+                  </p>
+                </div>
+                <ChevronRight className="w-4 h-4 text-gray-300 shrink-0" aria-hidden="true" />
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <div className="card mt-3 p-6 text-center text-sm text-gray-500">
+            <p className="text-2xl">📅</p>
+            <p className="mt-1">No programs scheduled for today.</p>
+          </div>
+        )}
       </section>
 
       {/* Dashboard grid — Aarti | Programs (2 cols on desktop) */}
@@ -354,19 +434,32 @@ export default function Home() {
           )}
         </section>
       </div>
-    </div>
+      </div>
+
+      {/* Desktop (≥1024px) — premium festival homepage */}
+      <DesktopHome
+        site={site}
+        mandal={mandal}
+        donation={donation}
+        programs={programs}
+        gallery={gallery}
+        members={members}
+        quickActions={quickActions}
+      />
+    </>
   )
 }
 
 function HomeSkeleton() {
   return (
-    <div className="app-container py-4 md:py-6 lg:py-8 pb-10" aria-busy="true" aria-label="Loading Home">
+    <>
+      <div className="app-container py-4 md:py-6 pb-10 lg:hidden" aria-busy="true" aria-label="Loading Home">
       <div className="space-y-1">
         <div className="skeleton h-3 w-24 rounded-full" />
         <div className="skeleton h-5 w-56 rounded-full" />
         <div className="skeleton h-3 w-40 rounded-full" />
       </div>
-      <div className="skeleton h-[340px] sm:h-[380px] md:h-[420px] lg:h-[460px] mt-5 rounded-2xl" />
+      <div className="skeleton h-[340px] sm:h-[380px] md:h-[420px] mt-5 rounded-2xl" />
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-5">
         {Array.from({ length: 4 }).map((_, i) => (
           <div key={i} className="skeleton h-16 md:h-[72px] rounded-2xl" />
@@ -382,6 +475,35 @@ function HomeSkeleton() {
           {Array.from({ length: 3 }).map((_, i) => <div key={i} className="skeleton h-[72px] rounded-2xl" />)}
         </div>
       </div>
-    </div>
+      </div>
+
+      {/* Desktop skeleton */}
+      <div className="hidden lg:block bg-cream" aria-busy="true" aria-label="Loading Home">
+        <div className="skeleton h-10 w-full rounded-none" />
+        <div className="app-container grid grid-cols-2 gap-10 min-h-[600px] py-16">
+          <div className="space-y-4">
+            <div className="skeleton h-4 w-40 rounded-full" />
+            <div className="skeleton h-16 w-3/4 rounded-2xl" />
+            <div className="skeleton h-8 w-56 rounded-full" />
+            <div className="skeleton h-5 w-64 rounded-full" />
+            <div className="skeleton h-5 w-80 rounded-full" />
+            <div className="flex gap-3 pt-4">
+              <div className="skeleton h-12 w-40 rounded-full" />
+              <div className="skeleton h-12 w-40 rounded-full" />
+            </div>
+          </div>
+          <div className="skeleton h-[540px] rounded-3xl" />
+        </div>
+        <div className="app-container space-y-10 pb-10">
+          <div className="skeleton h-28 rounded-3xl" />
+          <div className="grid grid-cols-4 gap-5">
+            {Array.from({ length: 4 }).map((_, i) => <div key={i} className="skeleton h-44 rounded-3xl" />)}
+          </div>
+          <div className="grid grid-cols-3 gap-5">
+            {Array.from({ length: 3 }).map((_, i) => <div key={i} className="skeleton h-32 rounded-3xl" />)}
+          </div>
+        </div>
+      </div>
+    </>
   )
 }

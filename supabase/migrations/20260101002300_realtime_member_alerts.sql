@@ -3,15 +3,22 @@
 --
 -- Guarantees that admin announcements & notifications reach members in real
 -- time (within seconds). Ensures every table the member app listens to is in
--- the SUPABASE_REALTIME publication.
+-- the SUPABASE_REALTIME publication. Idempotent / safe to re-run.
+-- 
+-- App listeners:
+--   - Home            : aartis, announcements, profiles, site_settings,
+--                       donation_info, mandal_info
+--   - Notifications   : notifications (+ notification_reads for read state)
+--   - Chat            : chat_messages (single global room)
+--   - Calendar        : calendar_events
 --
 -- BULLETPROOF: this script cannot fail. Every table name is checked with
--- to_regclass() before being added, so a name that does not exist (for example
--- "chat_rooms") is simply skipped instead of raising 42P01. It is fully
--- idempotent and safe to re-run.
+-- to_regclass() first, so a name that does not exist is skipped instead of
+-- raising 42P01. It is fully idempotent and safe to re-run.
 -- ============================================================================
 
 do $$
+
 begin
   if not exists (select 1 from pg_publication where pubname = 'supabase_realtime') then
     create publication supabase_realtime;
@@ -37,16 +44,17 @@ begin
     'chat_messages'
   ]
   loop
-    if to_regclass(format('public.%I', t)) is not null then
-      begin
-        execute format('alter publication supabase_realtime add table public.%I', t);
-      exception
-        when duplicate_object then null;
-      end;
-    end if;
+    begin
+      execute format('alter publication supabase_realtime add table public.%I', t);
+    exception
+      when others then
+        raise notice 'already in realtime (or skipped): %', t;
+    end;
   end loop;
 end $$;
 
+-- Members need SELECT on realtime-streamed tables. Reads are guarded by RLS;
+-- these grants only ensure anon/authenticated can subscribe to the channels.
 do $$
 begin
   if to_regclass('public.notification_reads') is not null then
